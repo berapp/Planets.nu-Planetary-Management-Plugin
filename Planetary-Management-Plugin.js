@@ -572,7 +572,7 @@ box-shadow: 2px 2px 2px #777777}");
 			if (plg.showOverlayMenu == true) {
 				console.log("SHOWOVERLAY: " + plg.showOverlayMenu + " - Setting css exp btn offscreen.");
 				$("#PlanetsLoc").css("right","68px");
-				$("#PMMapBtnBar").css("right","6px");
+				$("#PMMapBtnBar").css("right","50px");
 				$("#PMMapExpBtn").css("right","-25px");
 			}
 			else {
@@ -612,7 +612,7 @@ box-shadow: 2px 2px 2px #777777}");
 				$('#PMMapBtnBar').animate(
 					{
 						// 68 planetloc, 52 width on mapbtn, 6px on right; new menu 26px, lets give 4 px buffer
-						right:'6px'
+						right:'50px'
 					},400);
 				$('#PMMapExpBtn').animate(
 					{
