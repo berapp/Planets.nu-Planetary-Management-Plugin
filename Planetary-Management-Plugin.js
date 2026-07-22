@@ -2213,20 +2213,22 @@ box-shadow: 2px 2px 2px #777777}");
                         $(this).val(plg.ctarray[$(this).attr('data-plid')]);
                     });
 
-                    $('.CTSelect').change(function() {
+                    $(document).on('change', '.CTSelect', function() {
                         //console.log("CT CHANGED!");
                         plg.ctarray[$(this).attr('data-plid')] = $(this).val();
                         plg.saveObjectAsNote(2, plg.notetype, [plugin_version,plg.ctarray]);
+						console.log($(this).val());
                     });
 
                     $('.NTSelect').each(function() {
                         $(this).val(plg.ntarray[$(this).attr('data-plid')]);
                     });
 
-                    $('.NTSelect').change(function() {
+                    $(document).on('change', '.NTSelect', function() {
                         //console.log("NT CHANGED!");
                         plg.ntarray[$(this).attr('data-plid')] = $(this).val();
                         plg.saveObjectAsNote(1, plg.notetype, [plugin_version,plg.ntarray]);
+						console.log($(this).val());
                     });
 
                     $('#BMGApplyBtn').click(function() {
