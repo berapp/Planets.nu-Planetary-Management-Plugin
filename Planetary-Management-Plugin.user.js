@@ -4933,7 +4933,7 @@ Parameters: <br />\
         getFCColor: function(fc) {
 
             // Borrowed from nu.js to match the client
-            var fcbox_color = "lightgrey";
+            var fcbox_color = "black";
             fcu = fc.toUpperCase();
             if (fcu == "NUK" || fcu == "ATT") fcbox_color = "red";
             else if (fcu == "BUM") fcbox_color = "orchid";
