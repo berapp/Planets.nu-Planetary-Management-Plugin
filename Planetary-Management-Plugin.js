@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name          Planets.nu - Planetary Management Plugin 2025
+// @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2025.7
+// @version       2026.7
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
-// @contributor	  Jim Clark, Tim
+// @contributor	  Jim Clark, Tim, berapp
 // @include       https://planets.nu/#/*
 // @include       https://planets.nu/*
 // @include       https://planets.nu/*
@@ -42,9 +42,9 @@
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
 //
-// @namespace https://greasyfork.org/users/1476965
-// @downloadURL https://update.greasyfork.org/scripts/541665/Planetsnu%20-%20Planetary%20Management%20Plugin%202025.user.js
-// @updateURL https://update.greasyfork.org/scripts/541665/Planetsnu%20-%20Planetary%20Management%20Plugin%202025.meta.js
+// @namespace TODO
+// @downloadURL TODO
+// @updateURL TODO
 // ==/UserScript==
 
 
