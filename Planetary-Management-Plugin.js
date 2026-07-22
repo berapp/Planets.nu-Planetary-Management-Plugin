@@ -284,7 +284,7 @@ color: white; \
 font-size: 12px; \
 text-align: center; \
 font-weight: bold; \
-top: 58px; \
+top: 166px; \
 right: 6px; \
 width: 52px; \
 background-color: rgba(30,30,30,30.2); \
@@ -297,7 +297,7 @@ color: white; \
 font-size: 12px; \
 text-align: center; \
 font-weight: bold; \
-top: 58px; \
+top: 166px; \
 right: 6px; \
 width: 15px; \
 background-color: rgba(30,30,30,30.2); \
