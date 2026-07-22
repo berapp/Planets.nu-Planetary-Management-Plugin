@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7
+// @version       2026.7.2
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -42,9 +42,9 @@
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
 //
-// @namespace TODO
-// @downloadURL TODO
-// @updateURL TODO
+// @namespace https://github.com/berapp
+// @downloadURL https://github.com/berapp/Planets.nu-Planetary-Management-Plugin/raw/refs/heads/main/Planetary-Management-Plugin.user.js
+// @updateURL https://github.com/berapp/Planets.nu-Planetary-Management-Plugin/raw/refs/heads/main/Planetary-Management-Plugin.user.js
 // ==/UserScript==
 
 
