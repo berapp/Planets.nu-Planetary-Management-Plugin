@@ -310,7 +310,7 @@ color: white; \
 font-size: 12px; \
 text-align: center; \
 font-weight: bold; \
-top: 58px; \
+top: 166px; \
 right: -28px; \
 width: 26px; \
 background-color: rgba(30,30,30,30.2); \
