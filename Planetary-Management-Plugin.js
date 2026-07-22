@@ -56,7 +56,7 @@ function wrapper () { // wrapper for injection
     }
 
     var plugin_version = 2025.7;
-    var debug = false;
+    var debug = true;
 
     console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version );
 
@@ -419,7 +419,7 @@ box-shadow: 2px 2px 2px #777777}");
 				plg.pmmiNormal[16].src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/sbbuild2mid.jpg';
 				plg.pmmiNormal[17].src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/sb2mid.jpg';
 				//plg.pmmiNormal[18].src = 'http://i1371.photobucket.com/albums/ag292/rhansen00/Neut2Mid_zps78c30af0.png';
-				
+
 				plg.pmmiHover[0].src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/neuthov2mid.png';
 				plg.pmmiHover[1].src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/durhov2mid.png';
 				plg.pmmiHover[2].src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/trithov2mid.png';
@@ -1928,7 +1928,7 @@ box-shadow: 2px 2px 2px #777777}");
                             bmhtml += "<thead></thead>";
                             bmhtml += "<tr><td>Build Method:</td> \
 <td><div> \
-<select class='BMSelect' data-plid='" + planet.id + "'> \
+<select class='BMSelect' data-plid='" + planet.id + "' id='BMSelect" + planet.id + "' name='BMSelect" + planet.id + "'> \
 <option value='m'>Manual</option>";
                             for (var k=0; k < plg.buildmethods.length; k++) {
                                 bmhtml += "<option value='"+k+"'>" + plg.buildmethods[k][0] + "</option>";
@@ -2202,10 +2202,12 @@ box-shadow: 2px 2px 2px #777777}");
                         $(this).val(plg.bmarray[$(this).attr('data-plid')]);
                     });
 
-                    $('.BMSelect').change(function() {
-                        plg.bmarray[$(this).attr('data-plid')] = $(this).attr('value');
+                    $(document).on('change', '.BMSelect', function() {
+                        plg.bmarray[$(this).attr('data-plid')] = $(this).val();
                         plg.saveObjectAsNote(0, plg.notetype, [plugin_version,plg.bmarray]);
+                        console.log($(this).val());
                     });
+
 
                     $('.CTSelect').each(function() {
                         $(this).val(plg.ctarray[$(this).attr('data-plid')]);
@@ -2213,7 +2215,7 @@ box-shadow: 2px 2px 2px #777777}");
 
                     $('.CTSelect').change(function() {
                         //console.log("CT CHANGED!");
-                        plg.ctarray[$(this).attr('data-plid')] = $(this).attr('value');
+                        plg.ctarray[$(this).attr('data-plid')] = $(this).val();
                         plg.saveObjectAsNote(2, plg.notetype, [plugin_version,plg.ctarray]);
                     });
 
@@ -2223,7 +2225,7 @@ box-shadow: 2px 2px 2px #777777}");
 
                     $('.NTSelect').change(function() {
                         //console.log("NT CHANGED!");
-                        plg.ntarray[$(this).attr('data-plid')] = $(this).attr('value');
+                        plg.ntarray[$(this).attr('data-plid')] = $(this).val();
                         plg.saveObjectAsNote(1, plg.notetype, [plugin_version,plg.ntarray]);
                     });
 
@@ -6885,4 +6887,3 @@ script.type = "application/javascript";
 script.textContent = "(" + wrapper + ")();";
 
 document.body.appendChild(script);
-
