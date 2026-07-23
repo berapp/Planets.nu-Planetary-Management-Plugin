@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.3
+// @version       2026.7.4
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -398,7 +398,7 @@ box-shadow: 2px 2px 2px #777777}");
 				}
 
 				plg.pmmiExpImg = new Image();
-				plg.pmmiExpImg.src = 'https://planets.nu/_library/2014/11/expmenu.jpg';
+				plg.pmmiExpImg.src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/expmenu.png';
 
 				plg.pmmiNormal[0].src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/neut2mid.png';
 				plg.pmmiNormal[1].src = 'https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/dur2mid.png';
