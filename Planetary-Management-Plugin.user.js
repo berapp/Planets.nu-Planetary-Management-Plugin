@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.14
+// @version       2026.7.15
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -3659,6 +3659,8 @@ Parameters: <br />\
 			plg.buildmethods[11] = ["N Build 0","n-f-14-m-19-rfm-500-0-2-d-100"];
 			plg.buildmethods[12] = ["N Build 100","n-f-14-m-19-rfm-500-100-2-d-100"];
             plg.buildmethods[13] = ["N Build 200","n-f-14-m-19-rfm-500-200-2-d-100"];
+			plg.buildmethods[14] = ["Y Build 500","y-f-14-m-19-rfm-500-500-2-d-100"];
+			plg.buildmethods[15] = ["N Build 500","n-f-14-m-19-rfm-500-500-2-d-100"];
 			
         },
 
