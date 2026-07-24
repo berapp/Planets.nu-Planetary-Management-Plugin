@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.9
+// @version       2026.7.10
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -5682,8 +5682,8 @@ Parameters: <br />\
                 }
 
                 console.log("Bulding " + planet.name + " ->");
-               console.log("       " + plg.buildmethods[plg.bmarray[planet.id]][0]);
-               console.log("       " + plg.taxmethods[plg.ctarray[planet.id]].name + "/" + (planet.nativeclans > 0 ? plg.taxmethods[plg.ntarray[planet.id]].name : "-"));
+               // console.log("       " + plg.buildmethods[plg.bmarray[planet.id]][0]);
+               // console.log("       " + plg.taxmethods[plg.ctarray[planet.id]].name + "/" + (planet.nativeclans > 0 ? plg.taxmethods[plg.ntarray[planet.id]].name : "-"));
 		        vgap.plugins["plManagerPlugin"].planetBuildBldgs();
 
                 // Handle AutoTax check box
