@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.12
+// @version       2026.7.13
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -3653,7 +3653,11 @@ Parameters: <br />\
             plg.buildmethods[5] = ["Y Safe Build 200","y-f-14-m-19-d-16-rfm-500-200-2-d-100"];
             plg.buildmethods[6] = ["N Safe Build No Burn","n-f-14-m-19-d-16-rfm-500-200-2-d-100"];
             plg.buildmethods[7] = ["Y Build 2:1","y-rfm-500-500-2"];
-            plg.buildmethods[8] = ["Y Defence","y-d-500"];
+            plg.buildmethods[8] = ["Y Defense","y-d-500"];
+			plg.buildmethods[9] = ["N Safe Build 100","n-f-14-m-19-d-16-rfm-500-100-2-d-100"];
+            plg.buildmethods[10] = ["N Safe Build 200","n-f-14-m-19-d-16-rfm-500-200-2-d-100"];
+			plg.buildmethods[1] = ["N Build 100","n-f-14-m-19-rfm-500-100-2-d-100"];
+            plg.buildmethods[2] = ["N Build 200","n-f-14-m-19-rfm-500-200-2-d-100"];
         },
 
         resetTaxMethods: function() {
