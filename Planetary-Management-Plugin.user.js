@@ -1810,7 +1810,14 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
-                if (plg.pmviewcode == 14) {
+				if (plg.pmviewcode == 14) {
+                    for (var i = 0; i < vgap.myplanets.length; i++) {
+                        var planet = vgap.myplanets[i];
+                        if (planet.clans < 15 && planet.nativeclans > 0 && (planet.groundduranium + planet.groundtritanium + planet.groundmolybdenum) >= 2000 )
+                            plg.parray.push(planet);
+                    }
+                }
+                if (plg.pmviewcode == 15) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
                         if (planet.temp < 15)
