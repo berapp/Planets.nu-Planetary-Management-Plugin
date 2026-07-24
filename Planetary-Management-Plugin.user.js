@@ -1696,6 +1696,8 @@ box-shadow: 2px 2px 2px #777777}");
                 $("<li " + (plg.pmviewcode == 12 ? "class='SelectedFilter'" : "") + ">Planets Under Developed with Natives</li>").tclick(function() { plg.pmviewcode = 12; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 13 ? "class='SelectedFilter'" : "") + ">Planets Not Developed without Natives</li>").tclick(function() { plg.pmviewcode = 13; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 14 ? "class='SelectedFilter'" : "") + ">Planets Not Developed with Natives</li>").tclick(function() { plg.pmviewcode = 14; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
+				$("<li " + (plg.pmviewcode == 15 ? "class='SelectedFilter'" : "") + ">Planets with temperatures less than 15</li>").tclick(function() { plg.pmviewcode = 15; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
+				$("<li " + (plg.pmviewcode == 16 ? "class='SelectedFilter'" : "") + ">Planets with temperatures more than 85</li>").tclick(function() { plg.pmviewcode = 16; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
 
                 //$("</div>").appendTo(vgap.dash.content);
 
@@ -1811,7 +1813,14 @@ box-shadow: 2px 2px 2px #777777}");
                 if (plg.pmviewcode == 14) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
-                        if (planet.clans < 15 && planet.nativeclans > 0 && (planet.groundduranium + planet.groundtritanium + planet.groundmolybdenum) >= 2000 )
+                        if (planet.temp < 15)
+                            plg.parray.push(planet);
+                    }
+                }
+				if (plg.pmviewcode == 16) {
+                    for (var i = 0; i < vgap.myplanets.length; i++) {
+                        var planet = vgap.myplanets[i];
+                        if (planet.clans > 85)
                             plg.parray.push(planet);
                     }
                 }
