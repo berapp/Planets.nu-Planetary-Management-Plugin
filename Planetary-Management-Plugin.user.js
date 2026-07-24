@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.8
+// @version       2026.7.9
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -55,7 +55,7 @@ function wrapper () { // wrapper for injection
         return;
     }
 
-    var plugin_version = 2026.7.8;
+    var plugin_version = 2025.7;
     var debug = true;
 
     console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version );
