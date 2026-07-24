@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.10
+// @version       2026.7.11
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -3645,15 +3645,15 @@ Parameters: <br />\
             var plg = vgap.plugins["plManagerPlugin"];
 
             plg.buildmethods = [];
-            plg.buildmethods[0] = ["Build 0","y-f-14-m-19-rfm-500-0-2-d-100"];
-            plg.buildmethods[1] = ["Build 100","y-f-14-m-19-rfm-500-100-2-d-100"];
-            plg.buildmethods[2] = ["Build 200","y-f-14-m-19-rfm-500-200-2-d-100"];
-            plg.buildmethods[3] = ["Safe Build 0","y-f-14-m-19-d-16-rfm-500-0-2-d-100"];
-            plg.buildmethods[4] = ["Safe Build 100","y-f-14-m-19-d-16-rfm-500-100-2-d-100"];
-            plg.buildmethods[5] = ["Safe Build 200","y-f-14-m-19-d-16-rfm-500-200-2-d-100"];
-            plg.buildmethods[6] = ["Safe Build No Burn","n-f-14-m-19-d-16-rfm-500-200-2-d-100"];
-            plg.buildmethods[7] = ["Build 2:1","y-rfm-500-500-2"];
-            plg.buildmethods[8] = ["Defence","y-d-500"];
+            plg.buildmethods[0] = ["Y Build 0","y-f-14-m-19-rfm-500-0-2-d-100"];
+            plg.buildmethods[1] = ["Y Build 100","y-f-14-m-19-rfm-500-100-2-d-100"];
+            plg.buildmethods[2] = ["Y Build 200","y-f-14-m-19-rfm-500-200-2-d-100"];
+            plg.buildmethods[3] = ["Y Safe Build 0","y-f-14-m-19-d-16-rfm-500-0-2-d-100"];
+            plg.buildmethods[4] = ["Y Safe Build 100","y-f-14-m-19-d-16-rfm-500-100-2-d-100"];
+            plg.buildmethods[5] = ["Y Safe Build 200","y-f-14-m-19-d-16-rfm-500-200-2-d-100"];
+            plg.buildmethods[6] = ["N Safe Build No Burn","n-f-14-m-19-d-16-rfm-500-200-2-d-100"];
+            plg.buildmethods[7] = ["Y Build 2:1","y-rfm-500-500-2"];
+            plg.buildmethods[8] = ["Y Defence","y-d-500"];
         },
 
         resetTaxMethods: function() {
@@ -5714,7 +5714,7 @@ Parameters: <br />\
             var plg = vgap.plugins["plManagerPlugin"];
             if (plg.qb == 0) {
                 // We can take a quick break
-                console.log("Taking quick break...");
+                if (debug) console.log("Taking quick break...");
                 plg.qb = 1;
                 timeoutID = window.setTimeout(plg.quickBreak, 250);
             }
@@ -5765,7 +5765,7 @@ Parameters: <br />\
             var checkarray = mcode.split('-');
             if (debug) console.log("In check build, mcode = " + mcode + "  checkarray = " + checkarray);
             if (!(checkarray[0] == 'y' || checkarray[0] == 'Y' || checkarray[0] == 'n' || checkarray[0] == 'N')) {
-                console.log("Returning false on yn check");
+                if (debug) console.log("Returning false on yn check");
                 return false;
             }
 
@@ -5801,7 +5801,7 @@ Parameters: <br />\
             var bctext = "";
 
             if (!(checkarray[0] == 'y' || checkarray[0] == 'Y' || checkarray[0] == 'n' || checkarray[0] == 'N')) {
-                console.log("Returning false on yn check");
+                if (debug) console.log("Returning false on yn check");
                 return "Invalid Build Code";
             }
             else if (checkarray[0] == 'y' || checkarray[0] == 'Y')
@@ -6019,7 +6019,7 @@ Parameters: <br />\
             else
                 burnsups = false;
 
-            //console.log("IN BUILD BUILDINGS: BURNSUPS = " + burnsups);
+            console.log("IN BUILD BUILDINGS: BURNSUPS = " + burnsups);
 
             var planet;
             if (predict)
@@ -6088,7 +6088,7 @@ Parameters: <br />\
                     }
                     else {
                         var possmines = vgap.plugins["plManagerPlugin"].getPossMines(mc,sup);
-                        if (debug) console.log("Building Factories no burnsup, possmines = " + possmines);
+                        if (debug) console.log("Building Mines no burnsup, possmines = " + possmines);
                         if (possmines < numbuildtemp) {
                             // Thats all we can build
                             if (predict)
@@ -6105,7 +6105,7 @@ Parameters: <br />\
                     }
                 }
                 if (buildtype == 'd') {
-                    //console.log("Entered build defense");
+                    if (debug) console.log("Entered build defense");
                     // Building defense posts
                     numbuildtemp = Math.max(0,buildcount - planet.defense);
                     if (debug) console.log("numbuildtemp set");
@@ -6118,7 +6118,7 @@ Parameters: <br />\
                     else {
                         if (debug) console.log("entered else");
                         var possdef = vgap.plugins["plManagerPlugin"].getPossDef(mc,sup);
-                        if (debug) console.log("Building Factories no burnsup, possdef = " + possdef);
+                        if (debug) console.log("Building Defense Posts no burnsup, possdef = " + possdef);
                         if (possdef < numbuildtemp) {
                             // Thats all we can build
                             if (predict)
@@ -6158,7 +6158,7 @@ Parameters: <br />\
                             plg.predictChangeMines(secnumbuildtemp);
                         else {
                             var secpossmines = vgap.plugins["plManagerPlugin"].getPossMines(mc,sup);
-                            //console.log("Building Secondary RFM mines no burnsup, secpossmines = " + secpossmines);
+                            if (debug) console.log("Building Secondary RFM mines no burnsup, secpossmines = " + secpossmines);
                             if (secpossmines < secnumbuildtemp) {
                                 // Thats all we can build
                                 plg.predictChangeMines(secpossmines);
