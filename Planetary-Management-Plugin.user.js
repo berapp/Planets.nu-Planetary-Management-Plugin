@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.11
+// @version       2026.7.12
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -5110,7 +5110,7 @@ Parameters: <br />\
         getPossFacts: function(mc,sup) {
             if (mc == 0)
                 return 0;
-            if (sup < 3*mc)
+            if (sup < (mc/3))
                 return sup;
             else
                 return Math.truncate(mc / 3);
@@ -5119,7 +5119,7 @@ Parameters: <br />\
         getPossMines: function(mc,sup) {
             if (mc == 0)
                 return 0;
-            if (sup < 4*mc)
+            if (sup < (mc/4))
                 return sup;
             else
                 return Math.truncate(mc / 4);
@@ -5128,7 +5128,7 @@ Parameters: <br />\
         getPossDef: function(mc,sup) {
             if (mc == 0)
                 return 0;
-            if (sup < 10*mc)
+            if (sup < (mc/10))
                 return sup;
             else
                 return Math.truncate(mc / 10);
