@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.15
+// @version       2026.7.16
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -55,7 +55,7 @@ function wrapper () { // wrapper for injection
         return;
     }
 
-    var plugin_version = 2025.7;
+    var plugin_version = 2026.7;
     var debug = true;
 
     console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version );
@@ -3661,6 +3661,10 @@ Parameters: <br />\
             plg.buildmethods[13] = ["N Build 200","n-f-14-m-19-rfm-500-200-2-d-100"];
 			plg.buildmethods[14] = ["Y Build 500","y-f-14-m-19-rfm-500-500-2-d-100"];
 			plg.buildmethods[15] = ["N Build 500","n-f-14-m-19-rfm-500-500-2-d-100"];
+			plg.buildmethods[16] = ["Y Build 200 3","y-f-14-m-19-rfm-500-200-3-d-100"];
+			plg.buildmethods[17] = ["N Build 200 3","n-f-14-m-19-rfm-500-200-3-d-100"];
+			plg.buildmethods[18] = ["Y Safe Build 200 3","y-f-14-m-19-d-16-rfm-500-200-3-d-100"];
+			plg.buildmethods[19] = ["N Safe Build 200 3","n-f-14-m-19-d-16-rfm-500-200-3-d-100"];
 			
         },
 
