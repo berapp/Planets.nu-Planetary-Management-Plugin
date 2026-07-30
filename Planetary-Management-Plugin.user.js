@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.20
+// @version       2026.7.21
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -2887,7 +2887,7 @@ box-shadow: 2px 2px 2px #777777}",
             plpinfhtml += "<thead></thead>";
             plpinfhtml +=
               "<tr> \
-<td rowspan = 4><img class='TinyIcon' src='" +
+<td rowspan = 5><img class='TinyIcon' src='" +
               planet.img +
               "'/></td> \
 <td class='PLName' rowspan = 1 colspan = 2><b>" +
@@ -2918,6 +2918,23 @@ box-shadow: 2px 2px 2px #777777}",
                 plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
   <td class='PLInfVal'>" + plg.predicttimes.ttSB + "</td></tr>";
               }
+            }
+            switch (planet.nativetype) {
+              case 1:
+              plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
+<td class='PLInfVal'>Tech 10 hull technology</td></tr>";
+              break;
+              case 7:
+                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
+<td class='PLInfVal'>Tech 10 beam weapon</td></tr>";
+                break;
+              case 8:
+                  plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
+  <td class='PLInfVal'>Tech 10 engine technology</td></tr>";
+              default:
+                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
+<td class='PLInfVal'>NO</td></tr>";
+                break;
             }
             plpinfhtml += "</table>";
 
