@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.16
+// @version       2026.7.20
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -2887,7 +2887,7 @@ box-shadow: 2px 2px 2px #777777}",
             plpinfhtml += "<thead></thead>";
             plpinfhtml +=
               "<tr> \
-<td rowspan = 3><img class='TinyIcon' src='" +
+<td rowspan = 4><img class='TinyIcon' src='" +
               planet.img +
               "'/></td> \
 <td class='PLName' rowspan = 1 colspan = 2><b>" +
@@ -2904,6 +2904,21 @@ box-shadow: 2px 2px 2px #777777}",
 <td class='PLInfVal'>" +
               planet.temp +
               "</td></tr>";
+            if (vgap.getStarbase(planet.id) != null)
+              plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+<td class='PLInfVal'>YES</td></tr>";
+            else {
+              // Call the planet predictor
+              plg.planetPredictor(planet, 0, 49);
+              if (plg.predicttimes.ttSB == -1) {
+                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+<td class='PLInfVal'>NO</td></tr>";
+              }
+              else {
+                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+  <td class='PLInfVal'>" + plg.predicttimes.ttSB + "</td></tr>";
+              }
+            }
             plpinfhtml += "</table>";
 
             // Set up the building method table
