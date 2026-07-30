@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.16
+// @version       2026.7.17
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -1685,7 +1685,7 @@ box-shadow: 2px 2px 2px #777777}");
                 $("<li " + (plg.pmviewcode == 1 ? "class='SelectedFilter'" : "") + ">Planets with all Manual Methods</li>").tclick(function() { plg.pmviewcode = 1; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 2 ? "class='SelectedFilter'" : "") + ">Planets with Natives</li>").tclick(function() { plg.pmviewcode = 2; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 3 ? "class='SelectedFilter'" : "") + ">Planets without Natives</li>").tclick(function() { plg.pmviewcode = 3; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
-                $("<li " + (plg.pmviewcode == 4 ? "class='SelectedFilter'" : "") + ">Planets with > 1mil Colonists</li>").tclick(function() { plg.pmviewcode = 4; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
+                $("<li " + (plg.pmviewcode == 4 ? "class='SelectedFilter'" : "") + ">Planets with > 1M Colonists</li>").tclick(function() { plg.pmviewcode = 4; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 5 ? "class='SelectedFilter'" : "") + ">Planets with No Build Method</li>").tclick(function() { plg.pmviewcode = 5; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 6 ? "class='SelectedFilter'" : "") + ">Planets with No Colonist Tax Method</li>").tclick(function() { plg.pmviewcode = 6; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 7 ? "class='SelectedFilter'" : "") + ">Planets with No Native Tax Method</li>").tclick(function() { plg.pmviewcode = 7; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
@@ -1696,17 +1696,21 @@ box-shadow: 2px 2px 2px #777777}");
                 $("<li " + (plg.pmviewcode == 12 ? "class='SelectedFilter'" : "") + ">Planets Under Developed with Natives</li>").tclick(function() { plg.pmviewcode = 12; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 13 ? "class='SelectedFilter'" : "") + ">Planets Not Developed without Natives</li>").tclick(function() { plg.pmviewcode = 13; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
                 $("<li " + (plg.pmviewcode == 14 ? "class='SelectedFilter'" : "") + ">Planets Not Developed with Natives</li>").tclick(function() { plg.pmviewcode = 14; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
-				$("<li " + (plg.pmviewcode == 15 ? "class='SelectedFilter'" : "") + ">Planets with temperatures less than 15</li>").tclick(function() { plg.pmviewcode = 15; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
-				$("<li " + (plg.pmviewcode == 16 ? "class='SelectedFilter'" : "") + ">Planets with temperatures more than 85</li>").tclick(function() { plg.pmviewcode = 16; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
+				$("<li " + (plg.pmviewcode == 15 ? "class='SelectedFilter'" : "") + ">Planets with temperatures &lt; 15</li>").tclick(function() { plg.pmviewcode = 15; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
+				$("<li " + (plg.pmviewcode == 16 ? "class='SelectedFilter'" : "") + ">Planets with temperatures &gt; 85</li>").tclick(function() { plg.pmviewcode = 16; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
+				$("<li " + (plg.pmviewcode == 17 ? "class='SelectedFilter'" : "") + ">Planets with &gt; 100k Colonists with No Colonist Tax Method</li>").tclick(function() { plg.pmviewcode = 17; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
+				$("<li " + (plg.pmviewcode == 18 ? "class='SelectedFilter'" : "") + ">Planets with &gt; 1M Natives with No Native Tax Method</li>").tclick(function() { plg.pmviewcode = 18; vgap.plugins["plManagerPlugin"].displayPM(0); }).appendTo(PMfilterMenu);
 
                 //$("</div>").appendTo(vgap.dash.content);
 
 
                 plg.parray = [];
 
+				// All Planets
                 if (plg.pmviewcode == 0)
                     plg.parray = vgap.myplanets;
 
+				// Planets with all Manual Methods
                 if (plg.pmviewcode == 1) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1719,6 +1723,8 @@ box-shadow: 2px 2px 2px #777777}");
                                     plg.parray.push(planet);
                             }
                 }
+
+				// Planets with Natives
                 if (plg.pmviewcode == 2) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1726,6 +1732,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets without Natives
                 if (plg.pmviewcode == 3) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1733,6 +1741,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets with > 1M Colonists
                 if (plg.pmviewcode == 4) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1740,6 +1750,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets with No Build Method
                 if (plg.pmviewcode == 5) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1747,6 +1759,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets with No Colonist Tax Method
                 if (plg.pmviewcode == 6) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1754,6 +1768,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets with No Native Tax Method
                 if (plg.pmviewcode == 7) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1764,6 +1780,8 @@ box-shadow: 2px 2px 2px #777777}");
                         }
                     }
                 }
+
+				// Planets with Completed Build Methods
                 if (plg.pmviewcode == 8) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1771,6 +1789,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets with a Starbase
                 if (plg.pmviewcode == 9) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1778,6 +1798,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets that can Build a Starbase
                 if (plg.pmviewcode == 10) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1789,6 +1811,8 @@ box-shadow: 2px 2px 2px #777777}");
                                     plg.parray.push(planet);
                                 }
                 }
+
+				// Planets Under Developed without Natives
                 if (plg.pmviewcode == 11) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1796,6 +1820,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets Under Developed with Natives
                 if (plg.pmviewcode == 12) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1803,6 +1829,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets Not Developed without Natives
                 if (plg.pmviewcode == 13) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1810,6 +1838,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets Not Developed with Natives
 				if (plg.pmviewcode == 14) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1817,6 +1847,8 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets with temperatures < 15
                 if (plg.pmviewcode == 15) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
@@ -1824,10 +1856,30 @@ box-shadow: 2px 2px 2px #777777}");
                             plg.parray.push(planet);
                     }
                 }
+
+				// Planets with temperatures > 85
 				if (plg.pmviewcode == 16) {
                     for (var i = 0; i < vgap.myplanets.length; i++) {
                         var planet = vgap.myplanets[i];
                         if (planet.temp > 85)
+                            plg.parray.push(planet);
+                    }
+                }
+
+				// Planets with > 100k Colonists with No Colonist Tax Method
+				if (plg.pmviewcode == 17) {
+                    for (var i = 0; i < vgap.myplanets.length; i++) {
+                        var planet = vgap.myplanets[i];
+                        if ((planet.clans >= 1000) && (plg.ctarray[planet.id] == 'm'))
+                            plg.parray.push(planet);
+                    }
+                }
+
+				// Planets with > 1M Natives with No Native Tax Method
+				if (plg.pmviewcode == 18) {
+                    for (var i = 0; i < vgap.myplanets.length; i++) {
+                        var planet = vgap.myplanets[i];
+                        if (planet.nativeclans > 10000 && plg.ntarray[planet.id] == 'm')
                             plg.parray.push(planet);
                     }
                 }
@@ -1927,13 +1979,26 @@ box-shadow: 2px 2px 2px #777777}");
                             plpinfhtml += "<table class=PLInfoTable data-plid='" + planet.id + "' border='0' width='100%'>";
                             plpinfhtml += "<thead></thead>";
                             plpinfhtml += "<tr> \
-<td rowspan = 3><img class='TinyIcon' src='" + planet.img + "'/></td> \
+<td rowspan = 4><img class='TinyIcon' src='" + planet.img + "'/></td> \
 <td class='PLName' rowspan = 1 colspan = 2><b>" + planet.name + "</b></td></tr>";
 
                             plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>ID#:&nbsp;</td> \
 <td class='PLInfVal'>" + planet.id + "</td></tr>";
                             plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Temp:&nbsp;</td> \
 <td class='PLInfVal'>" + planet.temp + "</td></tr>";
+							if (vgap.getStarbase(planet.id) != null)
+	                            plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+<td class='PLInfVal'>YES</td></tr>";
+	                        else {
+								// Call the planet predictor
+                        		plg.planetPredictor(planet, 0, 49);
+	                            if (plg.predicttimes.ttSB == -1)
+	                                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+<td class='PLInfVal'>NO</td></tr>";
+	                            else
+	                                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+<td class='PLInfVal'><span class='predictval'>" + plg.predicttimes.ttSB + "</span> turns</td></tr>";
+							
                             plpinfhtml += "</table>";
 
 
