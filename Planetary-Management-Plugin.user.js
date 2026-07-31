@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.21
+// @version       2026.7.22
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -58,7 +58,7 @@ function wrapper() {
   }
 
   var plugin_version = 2026.7;
-  var debug = true;
+  var debug = false;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
 
@@ -2908,16 +2908,18 @@ box-shadow: 2px 2px 2px #777777}",
               plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
 <td class='PLInfVal'>YES</td></tr>";
             else {
+              plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+              <td class='PLInfVal'>NO</td></tr>";
               // Call the planet predictor
-              plg.planetPredictor(planet, 0, 49);
-              if (plg.predicttimes.ttSB == -1) {
-                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
-<td class='PLInfVal'>NO</td></tr>";
-              }
-              else {
-                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
-  <td class='PLInfVal'>" + plg.predicttimes.ttSB + "</td></tr>";
-              }
+              //plg.planetPredictor(planet, 0, 49);
+//               if (plg.predicttimes.ttSB == -1) {
+//                 plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+// <td class='PLInfVal'>NO</td></tr>";
+//               }
+//               else {
+//                 plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
+//   <td class='PLInfVal'>?</td></tr>";
+//               }
             }
             switch (planet.nativetype) {
               case 1:
@@ -2929,8 +2931,13 @@ box-shadow: 2px 2px 2px #777777}",
 <td class='PLInfVal'>Tech 10 beam weapon</td></tr>";
                 break;
               case 8:
-                  plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
+                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
   <td class='PLInfVal'>Tech 10 engine technology</td></tr>";
+                break;
+              case 9:
+                plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
+    <td class='PLInfVal'>Tech 10 torpedo technology</td></tr>";
+                break;
               default:
                 plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>Native Advantage:&nbsp;</td> \
 <td class='PLInfVal'>NO</td></tr>";
@@ -8087,6 +8094,7 @@ Parameters: <br />\
           }
         }
         if (plg.planettaganalysis == true) {
+          // TODO
         }
 
         console.log("Bulding " + planet.name + " ->");
