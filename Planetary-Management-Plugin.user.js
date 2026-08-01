@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.23
+// @version       2026.7.24
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -2904,14 +2904,23 @@ box-shadow: 2px 2px 2px #777777}",
 <td class='PLInfVal'>" +
               planet.temp +
               "</td></tr>";
-		  plpinfhtml += "<tr><td class='PLInfTag' rowspan = 1>SB:&nbsp;</td> \
-<td class='PLInfVal'><span class='SBTurnCount' id='SBTurnCount-"+ planet.id +"' data-planetid='"+ planet.id +"' \
-			  onclick='function(){plg.planetPredictor(planet, 0, 49);if (plg.predicttimes.ttSB != null) {$(#SBTurnCount-"+ planet.id +").html("+plg.predicttimes.ttSB+")}'>";
-            if (vgap.getStarbase(planet.id) != null)
-              plpinfhtml += "YES";
-            else {
-              plpinfhtml += "??";
-		  plpinfhtml += "</span></td></tr>";
+		  plpinfhtml += "<tr>" +
+              "<td class='PLInfTag' rowspan='1'>SB:&nbsp;</td>" +
+              "<td class='PLInfVal'>" +
+              "<span class='SBTurnCount' id='SBTurnCount-" + planet.id + 
+              "' data-planetid='" + planet.id + 
+              "' onclick=\"plg.planetPredictor(planet, 0, 49);" +
+              "if (plg.predicttimes.ttSB != null) {" +
+              "$('#SBTurnCount-" + planet.id + "').html(plg.predicttimes.ttSB);" +
+              "}\">";
+
+if (vgap.getStarbase(planet.id) != null) {
+  plpinfhtml += "YES";
+} else {
+  plpinfhtml += "??";
+}
+
+plpinfhtml += "</span></td></tr>";
               // Call the planet predictor
               //plg.planetPredictor(planet, 0, 49);
 //               if (plg.predicttimes.ttSB == -1) {
