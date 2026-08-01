@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.7.25
+// @version       2026.7.27
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -2887,7 +2887,9 @@ box-shadow: 2px 2px 2px #777777}",
             plpinfhtml += "<thead></thead>";
             plpinfhtml +=
               "<tr> \
-<td rowspan = 5><img class='TinyIcon' src='" +
+<td rowspan = 5><img class='TinyIcon' data-plid='" +
+              planet.id +
+              "'  src='" +
               planet.img +
               "'/></td> \
 <td class='PLName' rowspan = 1 colspan = 2><b>" +
@@ -2905,14 +2907,19 @@ box-shadow: 2px 2px 2px #777777}",
               planet.temp +
               "</td></tr>";
 		  plpinfhtml += "<tr>" +
-              "<td class='PLInfTag' rowspan='1'>SB:&nbsp;</td>" +
-              "<td class='PLInfVal'>" +
-              "<span class='SBTurnCount' id='SBTurnCount-" + planet.id + 
-              "' data-planetid='" + planet.id + 
-              "' onclick=\"plg.planetPredictor(planet, 0, 49);" +
-              "if (plg.predicttimes.ttSB != null) {" +
-              "$('#SBTurnCount-" + planet.id + "').html(plg.predicttimes.ttSB);" +
-              "}\">";
+  "<td class='PLInfTag' rowspan='1'>SB:&nbsp;</td>" +
+  "<td class='PLInfVal'>" +
+  "<span class='SBTurnCount' id='SBTurnCount-" + planet.id +
+  "' data-planetid='" + planet.id +
+  "' onclick=\"" +
+  "var pid = parseInt(this.getAttribute('data-planetid'), 10);" +
+  "var p = vgap.getPlanet(pid);" +
+  "var plg = vgap.plugins['plManagerPlugin'];" +
+  "plg.planetPredictor(p, 0, 49);" +
+  "if (plg.predicttimes && plg.predicttimes.ttSB != null) {" +
+  "  $('#SBTurnCount-' + pid).html(plg.predicttimes.ttSB);" +
+  "}" +
+  "\">";
 
 if (vgap.getStarbase(planet.id) != null) {
   plpinfhtml += "YES";
@@ -3401,7 +3408,8 @@ plpinfhtml += "</span></td></tr>";
                     html += "<td colspan = 2>" + ntmrevhtml + "</td></tr>";
                     $(html).appendTo("#PlanetRows");
                     */
-        $(".PLInfoTable").click(function () {
+        //$(".PLInfoTable").click(function () {
+        $(".TinyIcon").click(function () {
           plg.showPlanetDetail($(this).attr("data-plid"));
         });
 
