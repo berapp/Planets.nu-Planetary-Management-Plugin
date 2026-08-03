@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.1
+// @version       2026.8.3
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -3500,6 +3500,21 @@ box-shadow: 2px 2px 2px #777777}",
         for (var i = 0; i < plg.parray.length; i++) {
           var planet = plg.parray[i];
           var base = vgap.getStarbase(planet.id) != null ? "X" : "";
+          planet.pmscore = 0;
+          planet.pmscore += (planet.groundneutronium / 10);
+          if(planet.groundneutronium > 2000)
+            planet.pmscore += (planet.densityneutronium);
+          planet.pmscore += (planet.groundduranium / 10);
+          if(planet.groundduranium > 2000)
+            planet.pmscore += (planet.densityduranium);
+          planet.pmscore += (planet.groundtritanium / 10);
+          if(planet.groundtritanium > 2000)
+            planet.pmscore += (planet.densitytritanium);
+          planet.pmscore += (planet.groundmolybdenum / 10);
+          if(planet.groundmolybdenum > 2000)
+            planet.pmscore += (planet.densitymolybdenum);
+          planet.pmscore = Math.round(planet.pmscore);
+
 
           if (view == 0) {
             // Set up the planet information table
@@ -3536,8 +3551,11 @@ box-shadow: 2px 2px 2px #777777}",
                 "<td class='PLInfVal'>" +
                 "<span class='SBTurnCount' id='SBTurnCount-" + planet.id +
                 "' data-planetid='" + planet.id +
-                "' onclick='vgap.plugins.plManagerPlugin.showSBTurnCount(this)'>" ;
-            plpinfhtml += (vgap.getStarbase(planet.id) != null) ? "YES" : "NO";
+                "' onclick='vgap.plugins.plManagerPlugin.showSBTurnCount(this)'>";
+            if(planet.sbTurns != null)
+              plpinfhtml += planet.sbTurns;
+            else
+              plpinfhtml += (vgap.getStarbase(planet.id) != null) ? "YES" : "NO";
             plpinfhtml += "</span></td></tr>";
             switch (planet.nativetype) {
               case 1:
@@ -3968,6 +3986,14 @@ box-shadow: 2px 2px 2px #777777}",
                 planet.groundmolybdenum,
                 planet.densitymolybdenum,
               ) +
+              "</td></tr>";
+
+            // Planetary Score
+            reshtml += "<tr><td class='ResName' align='right'>Planetary Score</td>";
+            reshtml +=
+              "<td class='ResSfc' align='right'>" +
+              planet.pmscore +
+              "&nbsp;" +
               "</td></tr>";
             reshtml += "</table>";
 
@@ -7093,6 +7119,8 @@ Parameters: <br />\
         plg.predicttimes.ttDMO = -1;
         plg.predicttimes.ttTMO = -1;
         plg.predicttimes.ttMMO = -1;
+        plg.predicttimes.planetscore = 0;
+
 
         //plg.printPlanet(turn);
         plg.planetSetTaxGeneral(true);
@@ -7398,6 +7426,7 @@ Parameters: <br />\
       plg.planetPredictor(p, 0, 49);
       if (plg.predicttimes && plg.predicttimes.ttSB != null) {
         $('#SBTurnCount-' + pid).html(plg.predicttimes.ttSB);
+        p.sbTurns = plg.predicttimes.ttSB;
       }
     },
 
