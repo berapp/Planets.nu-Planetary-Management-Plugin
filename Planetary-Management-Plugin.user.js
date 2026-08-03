@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.3
+// @version       2026.8.4
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -3514,6 +3514,17 @@ box-shadow: 2px 2px 2px #777777}",
           if(planet.groundmolybdenum > 2000)
             planet.pmscore += (planet.densitymolybdenum);
           planet.pmscore = Math.round(planet.pmscore);
+          if (!planet.note) planet.note = vgap.addNote(planet.id, 1);
+          var noteBody = planet.note['body'] || "";
+          var pmscoreValue = "PMSCORE=" + planet.pmscore.toString();
+          if (/(^|\n)PMSCORE=\d+/.test(noteBody)) {
+            noteBody = noteBody.replace(/(^|\n)PMSCORE=\d+/, function(match, prefix) {
+              return prefix + pmscoreValue;
+            });
+          } else {
+            noteBody = noteBody ? noteBody + "\n" + pmscoreValue : pmscoreValue;
+          }
+          planet.note['body'] = noteBody;
 
 
           if (view == 0) {
