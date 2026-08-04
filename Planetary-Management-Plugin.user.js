@@ -4146,6 +4146,25 @@ box-shadow: 2px 2px 2px #777777}",
           console.log($(this).val());
         });
 
+        // The game (nu.js) has a delegated focus handler on an ancestor element
+        // that calls al.scrollTop(0), which jScrollPane intercepts as scroll-to-top.
+        // stopPropagation can't help: the game's handler fires AFTER ours because
+        // it is delegated from an ancestor (direct target handlers run first).
+        //
+        // Fix: patch $.fn.scrollTop to swallow any call that sets the value to 0.
+        // The patch stays active through the entire focus event cycle (our direct
+        // handler -> focusin bubbles -> game's delegated handler).  We restore in
+        // setTimeout(0) inside the focus handler, which runs in the next task --
+        // after all synchronous focus/focusin handlers have completed.
+        $(".BMSelect, .CTSelect, .NTSelect").on("mousedown click", function (e) {
+          var _origScrollTop = parseInt($('.jspPane').first().css('top'), 10);
+          console.log('scrollTop', $(this).scrollTop(), _origScrollTop);
+          e.stopPropagation();
+          setTimeout(function () {
+            $('.jspPane').first().css('top', _origScrollTop + 'px')
+          }, 0);
+        });
+
         $("#BMGApplyBtn").click(function () {
           var bmind = $("#BMGSelect").val();
           // Apply the method
