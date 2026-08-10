@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.8
+// @version       2026.8.9
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -15459,6 +15459,14 @@ box-shadow: 2px 2px 2px #777777}",
               planet.pmscore +
               "&nbsp;" +
               "</td></tr>";
+              // Planetary Score2
+              reshtml +=
+                "<tr><td class='ResName' align='right'>Planetary Score2</td>";
+              reshtml +=
+                "<td class='ResSfc' align='right'>" +
+                planet.pmscore2 +
+                "&nbsp;" +
+                "</td></tr>";
             reshtml += "</table>";
 
             // Assemble the row : also had id='PLRow' class='RowSelect'
@@ -20502,6 +20510,12 @@ Parameters: <br />\
         // There are still more planets to do
 
         planet.pmscore = 0;
+        planet.pmscore2 = 0;
+        planet.pmscore2 += planet.groundneutronium * (planet.densityneutronium / 100);
+        planet.pmscore2 += planet.groundduranium * (planet.densityduranium / 100);
+        planet.pmscore2 += planet.groundtritanium * (planet.densitytritanium / 100);
+        planet.pmscore2 += planet.groundmolybdenum * (planet.densitymolybdenum / 100);
+
         planet.pmscore += planet.groundneutronium / 10;
         if (planet.groundneutronium > 2000)
           planet.pmscore += planet.densityneutronium;
@@ -20515,10 +20529,12 @@ Parameters: <br />\
         if (planet.groundmolybdenum > 2000)
           planet.pmscore += planet.densitymolybdenum;
         planet.pmscore = Math.round(planet.pmscore);
+        planet.pmscore2 = Math.round(planet.pmscore2);
         if (!planet.note) planet.note = vgap.addNote(planet.id, 1);
         var noteBody = planet.note["body"] || "";
         var pmscoreValue = "PMSCORE=" + planet.pmscore.toString();
-        console.log("Analysing planet " + planet.id + " with pmscore " + planet.pmscore);
+        var pmscoreValue2 = "PMSCORE2=" + planet.pmscore2.toString();
+        console.log("Analysing planet " + planet.id + " with pmscore " + planet.pmscore + " and pmscore2 " + planet.pmscore2);
         if (/(^|\n)PMSCORE=\d+/.test(noteBody)) {
           noteBody = noteBody.replace(
             /(^|\n)PMSCORE=\d+/,
@@ -20528,6 +20544,16 @@ Parameters: <br />\
           );
         } else {
           noteBody = noteBody ? noteBody + "\n" + pmscoreValue : pmscoreValue;
+        }
+        if (/(^|\n)PMSCORE2=\d+/.test(noteBody)) {
+          noteBody = noteBody.replace(
+            /(^|\n)PMSCORE2=\d+/,
+            function (match, prefix) {
+              return prefix + pmscoreValue2;
+            },
+          );
+        } else {
+          noteBody = noteBody ? noteBody + "\n" + pmscoreValue2 : pmscoreValue2;
         }
         planet.note["body"] = noteBody;
         plg.planetPredictor(planet, 0, 49);
