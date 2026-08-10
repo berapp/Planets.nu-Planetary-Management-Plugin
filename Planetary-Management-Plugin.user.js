@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.7
+// @version       2026.8.8
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -15110,6 +15110,16 @@ box-shadow: 2px 2px 2px #777777}",
 </div> \
 </td></tr>";
             }
+            var plNote = vgap.getNote(planet.id, 1);
+            if (plNote && plNote.body.length > 0)
+              plNotesText = plNote.body;
+            else
+              plNotesText = "";
+            bmhtml +=
+              "<tr><td>Notes:&nbsp;</td> \
+<td class='PLInfVal'>" +
+              plNotesText +
+              "</td></tr>";
             bmhtml += "</table>";
 
             // Set up the population table
