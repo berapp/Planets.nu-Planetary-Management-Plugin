@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.6
+// @version       2026.8.7
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -399,6 +399,11 @@ width: 26px; \
 background-color: rgba(30,30,30,30.2); \
 padding: 3px; \
 box-shadow: 2px 2px 2px #777777}",
+      );
+      vgap.plugins["plManagerPlugin"].addCss(
+        ".surveyOnly { \
+            display: inherit; \
+        }",
       );
       // width: 52px
       // right: 6px
