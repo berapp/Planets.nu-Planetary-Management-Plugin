@@ -15451,17 +15451,10 @@ box-shadow: 2px 2px 2px #777777}",
               ) +
               "</td></tr>";
 
-            // Planetary Score
-            reshtml +=
-              "<tr><td class='ResName' align='right'>Planetary Score</td>";
-            reshtml +=
-              "<td class='ResSfc' align='right'>" +
-              planet.pmscore +
-              "&nbsp;" +
-              "</td></tr>";
+
               // Planetary Score2
               reshtml +=
-                "<tr><td class='ResName' align='right'>Planetary Score2</td>";
+                "<tr><td class='ResName' align='right'>Planetary Score</td>";
               reshtml +=
                 "<td class='ResSfc' align='right'>" +
                 planet.pmscore2 +
@@ -20509,45 +20502,23 @@ Parameters: <br />\
 
         // There are still more planets to do
 
-        planet.pmscore = 0;
+
         planet.pmscore2 = 0;
         planet.pmscore2 += planet.groundneutronium * (planet.densityneutronium / 100);
         planet.pmscore2 += planet.groundduranium * (planet.densityduranium / 100);
         planet.pmscore2 += planet.groundtritanium * (planet.densitytritanium / 100);
         planet.pmscore2 += planet.groundmolybdenum * (planet.densitymolybdenum / 100);
 
-        planet.pmscore += planet.groundneutronium / 10;
-        if (planet.groundneutronium > 2000)
-          planet.pmscore += planet.densityneutronium;
-        planet.pmscore += planet.groundduranium / 10;
-        if (planet.groundduranium > 2000)
-          planet.pmscore += planet.densityduranium;
-        planet.pmscore += planet.groundtritanium / 10;
-        if (planet.groundtritanium > 2000)
-          planet.pmscore += planet.densitytritanium;
-        planet.pmscore += planet.groundmolybdenum / 10;
-        if (planet.groundmolybdenum > 2000)
-          planet.pmscore += planet.densitymolybdenum;
-        planet.pmscore = Math.round(planet.pmscore);
+
         planet.pmscore2 = Math.round(planet.pmscore2);
         if (!planet.note) planet.note = vgap.addNote(planet.id, 1);
         var noteBody = planet.note["body"] || "";
-        var pmscoreValue = "PMSCORE=" + planet.pmscore.toString();
         var pmscoreValue2 = "PMSCORE2=" + planet.pmscore2.toString();
-        console.log("Analysing planet " + planet.id + " with pmscore " + planet.pmscore + " and pmscore2 " + planet.pmscore2);
+        console.log("Analysing planet " + planet.id + " and pmscore2 " + planet.pmscore2);
+
         if (/(^|\n)PMSCORE=\d+/.test(noteBody)) {
           noteBody = noteBody.replace(
             /(^|\n)PMSCORE=\d+/,
-            function (match, prefix) {
-              return prefix + pmscoreValue;
-            },
-          );
-        } else {
-          noteBody = noteBody ? noteBody + "\n" + pmscoreValue : pmscoreValue;
-        }
-        if (/(^|\n)PMSCORE2=\d+/.test(noteBody)) {
-          noteBody = noteBody.replace(
-            /(^|\n)PMSCORE2=\d+/,
             function (match, prefix) {
               return prefix + pmscoreValue2;
             },
