@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.10
+// @version       2026.8.13
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,8 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.13  Bulk build now operates on the filtered planet list instead of
+//                           the first N planets from the default (unfiltered) list
 //
 // @namespace https://github.com/berapp
 // @downloadURL https://github.com/berapp/Planets.nu-Planetary-Management-Plugin/raw/refs/heads/main/Planetary-Management-Plugin.user.js
@@ -19797,13 +19799,27 @@ Parameters: <br />\
       else return Math.truncate(mc / 10);
     },
 
+    // Bulk build walks plg.parray (the current filter). Single-planet
+    // build from the planet screen indexes vgap.myplanets instead.
+    getBuildPlanet: function () {
+      var plg = vgap.plugins["plManagerPlugin"];
+      if (
+        plg.ambuilding &&
+        plg.parray &&
+        plg.parray.length > 0 &&
+        plg.planetbuildindex < plg.parray.length
+      )
+        return plg.parray[plg.planetbuildindex];
+      return vgap.myplanets[plg.planetbuildindex];
+    },
+
     planetSetNativeTax: function () {
       //console.log("Entered set Native Tax.");
       var plg = vgap.plugins["plManagerPlugin"];
 
-      var planet = vgap.myplanets[plg.planetbuildindex];
+      var planet = plg.getBuildPlanet();
       if (planet.nativeclans > 0) {
-        switch (plg.ntarray[vgap.myplanets[plg.planetbuildindex].id]) {
+        switch (plg.ntarray[planet.id]) {
           case "1":
           case 1:
             // No tax
@@ -19841,7 +19857,7 @@ Parameters: <br />\
       var planet;
 
       if (predict) planet = plg.pplanet;
-      else planet = vgap.myplanets[plg.planetbuildindex];
+      else planet = plg.getBuildPlanet();
 
       var ctaxindex = plg.ctarray[planet.id];
       if (debug) console.log("CTAXINDEX is " + ctaxindex);
@@ -20317,23 +20333,21 @@ Parameters: <br />\
       if (debug) console.log("Myplanets length is " + vgap.myplanets.length);
       var plg = vgap.plugins["plManagerPlugin"];
 
+      var planet = plg.getBuildPlanet();
       if (debug)
         console.log(
           "Building planet: " +
-            vgap.myplanets[plg.planetbuildindex].id +
+            planet.id +
             "  Method is " +
-            plg.bmarray[vgap.myplanets[plg.planetbuildindex].id],
+            plg.bmarray[planet.id],
         );
-      if (debug)
-        console.log(
-          "Switching " + plg.bmarray[vgap.myplanets[plg.planetbuildindex].id],
-        );
+      if (debug) console.log("Switching " + plg.bmarray[planet.id]);
 
-      if (plg.bmarray[vgap.myplanets[plg.planetbuildindex].id] != "m") {
-        var bmarrayindex = vgap.myplanets[plg.planetbuildindex].id;
+      if (plg.bmarray[planet.id] != "m") {
+        var bmarrayindex = planet.id;
         var bm = plg.bmarray[bmarrayindex];
         var bmstring = plg.buildmethods[bm][1];
-        //plg.buildBldgsGeneral(plg.buildmethods[plg.bmarray[vgap.myplanets[plg.planetbuildindex].id]]);
+        //plg.buildBldgsGeneral(plg.buildmethods[plg.bmarray[planet.id]]);
         plg.buildBldgsGeneral(bmstring, false);
       }
     },
@@ -20877,8 +20891,7 @@ Parameters: <br />\
       var planet;
       if (predict) planet = plg.pplanet;
       else {
-        planet =
-          vgap.myplanets[vgap.plugins["plManagerPlugin"].planetbuildindex];
+        planet = plg.getBuildPlanet();
         //vgap.planetScreen.load(planet);
       }
 
