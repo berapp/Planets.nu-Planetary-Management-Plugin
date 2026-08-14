@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.13
+// @version       2026.8.14.1
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,7 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.14  Skip neutronium when calculating pmscore2 in unlimited-fuel games
 // @history       2026.8.13  Bulk build now operates on the filtered planet list instead of
 //                           the first N planets from the default (unfiltered) list
 //
@@ -57,7 +58,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = 2026.8;
+  var plugin_version = "2026.8.14.1";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -20518,7 +20519,9 @@ Parameters: <br />\
 
 
         planet.pmscore2 = 0;
-        planet.pmscore2 += planet.groundneutronium * (planet.densityneutronium / 100);
+        if (!vgap.settings.unlimitedfuel) {
+          planet.pmscore2 += planet.groundneutronium * (planet.densityneutronium / 100);
+        }
         planet.pmscore2 += planet.groundduranium * (planet.densityduranium / 100);
         planet.pmscore2 += planet.groundtritanium * (planet.densitytritanium / 100);
         planet.pmscore2 += planet.groundmolybdenum * (planet.densitymolybdenum / 100);
@@ -20527,18 +20530,18 @@ Parameters: <br />\
         planet.pmscore2 = Math.round(planet.pmscore2);
         if (!planet.note) planet.note = vgap.addNote(planet.id, 1);
         var noteBody = planet.note["body"] || "";
-        var pmscoreValue2 = "PMSCORE2=" + planet.pmscore2.toString();
+        var pmscore2Value = "PMSCORE2=" + planet.pmscore2.toString();
         console.log("Analysing planet " + planet.id + " and pmscore2 " + planet.pmscore2);
 
-        if (/(^|\n)PMSCORE=\d+/.test(noteBody)) {
+        if (/(^|\n)PMSCORE2=\d+/.test(noteBody)) {
           noteBody = noteBody.replace(
-            /(^|\n)PMSCORE=\d+/,
+            /(^|\n)PMSCORE2=\d+/,
             function (match, prefix) {
-              return prefix + pmscoreValue2;
+              return prefix + pmscore2Value;
             },
           );
         } else {
-          noteBody = noteBody ? noteBody + "\n" + pmscoreValue2 : pmscoreValue2;
+          noteBody = noteBody ? noteBody + "\n" + pmscore2Value : pmscore2Value;
         }
         planet.note["body"] = noteBody;
         plg.planetPredictor(planet, 0, 49);
