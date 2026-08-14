@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.14.1
+// @version       2026.8.14.4
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,9 +41,15 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.14.4 Hide supplies and use megacredits-only building/prediction
+//                            when the no-supplies (unlimited supplies) setting is on
+// @history       2026.8.14.3 Hide neutronium in overlays, resource tables, and predictions
+//                            when the unlimited fuel setting is on
 // @history       2026.8.14  Skip neutronium when calculating pmscore2 in unlimited-fuel games
 // @history       2026.8.13  Bulk build now operates on the filtered planet list instead of
 //                           the first N planets from the default (unfiltered) list
+// @history       2026.8.14.2 Safe supply-to-MC convert mode (s): convert supplies for building
+//                            but reserve enough for climate support so colonists don't die
 //
 // @namespace https://github.com/berapp
 // @downloadURL https://github.com/berapp/Planets.nu-Planetary-Management-Plugin/raw/refs/heads/main/Planetary-Management-Plugin.user.js
@@ -58,7 +64,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.14.1";
+  var plugin_version = "2026.8.14.4";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -738,10 +744,13 @@ box-shadow: 2px 2px 2px #777777}",
         '<span class="PMMapBtn" id="PMMapBtnBarTemp"><img title="Friendly Codes" src="' +
         vgap.plugins["plManagerPlugin"].pmmiNormal[5].src +
         '"></img></span>';
-      mapmenuhtml +=
-        '<hr />Minerals<span class="PMMapBtn" id="PMMapBtnBarNeut"><img title="Neutronium" src="' +
-        vgap.plugins["plManagerPlugin"].pmmiNormal[0].src +
-        '"></img></span>';
+      mapmenuhtml += '<hr />Minerals';
+      if (!vgap.plugins["plManagerPlugin"].unlimitedFuel()) {
+        mapmenuhtml +=
+          '<span class="PMMapBtn" id="PMMapBtnBarNeut"><img title="Neutronium" src="' +
+          vgap.plugins["plManagerPlugin"].pmmiNormal[0].src +
+          '"></img></span>';
+      }
       mapmenuhtml +=
         '<span class="PMMapBtn" id="PMMapBtnBarDur"><img title="Duranium" src="' +
         vgap.plugins["plManagerPlugin"].pmmiNormal[1].src +
@@ -771,9 +780,14 @@ box-shadow: 2px 2px 2px #777777}",
         vgap.plugins["plManagerPlugin"].pmmiNormal[9].src +
         '"></img></span>';
       mapmenuhtml +=
-        '<hr />Sup-MC<span class="PMMapBtn" id="PMMapBtnBarSup"><img title="Supplies" src="' +
-        vgap.plugins["plManagerPlugin"].pmmiNormal[10].src +
-        '"></img></span>';
+        "<hr />" +
+        (vgap.plugins["plManagerPlugin"].noSupplies() ? "Money" : "Sup-MC");
+      if (!vgap.plugins["plManagerPlugin"].noSupplies()) {
+        mapmenuhtml +=
+          '<span class="PMMapBtn" id="PMMapBtnBarSup"><img title="Supplies" src="' +
+          vgap.plugins["plManagerPlugin"].pmmiNormal[10].src +
+          '"></img></span>';
+      }
       mapmenuhtml +=
         '<span class="PMMapBtn" id="PMMapBtnBarMC"><img title="Megacredits" src="' +
         vgap.plugins["plManagerPlugin"].pmmiNormal[11].src +
@@ -1158,6 +1172,12 @@ box-shadow: 2px 2px 2px #777777}",
       oldfill = vgap.map.ctx.fillStyle;
       oldfont = vgap.map.ctx.font;
       var plg = vgap.plugins["plManagerPlugin"];
+      if (plg.unlimitedFuel()) {
+        plg.pmmcOverlay[0] = false;
+      }
+      if (plg.noSupplies()) {
+        plg.pmmcOverlay[10] = false;
+      }
 
       for (var i = 0; i < vgap.planets.length; i++) {
         var planet = vgap.planets[i];
@@ -1333,13 +1353,11 @@ box-shadow: 2px 2px 2px #777777}",
           } else if (plg.pmmcOverlay[11]) {
             // Megacredits
             if (planet.megacredits >= 0) {
-              fillstr =
-                planet.id +
-                ": MC: " +
-                planet.megacredits +
-                " [" +
-                (planet.supplies + planet.megacredits) +
-                "]";
+              fillstr = planet.id + ": MC: " + planet.megacredits;
+              if (!plg.noSupplies()) {
+                fillstr +=
+                  " [" + (planet.supplies + planet.megacredits) + "]";
+              }
             } else {
               fillstr = "";
             }
@@ -1721,21 +1739,26 @@ box-shadow: 2px 2px 2px #777777}",
             ctx.fillText(planet.megacredits, startx, starty);
             startx += ctx.measureText(planet.megacredits).width;
 
-            rchan = Math.round(
-              255 - ((planet.supplies + planet.megacredits) / 1500) * 255,
-            );
-            gchan = Math.round(
-              127 +
-                Math.min(((planet.supplies + planet.megacredits) / 1500) * 128),
-              128,
-            );
-            ctx.fillStyle = "rgba(" + rchan + "," + gchan + "," + bchan + ",1)";
+            if (!plg.noSupplies()) {
+              rchan = Math.round(
+                255 - ((planet.supplies + planet.megacredits) / 1500) * 255,
+              );
+              gchan = Math.round(
+                127 +
+                  Math.min(
+                    ((planet.supplies + planet.megacredits) / 1500) * 128,
+                  ),
+                128,
+              );
+              ctx.fillStyle =
+                "rgba(" + rchan + "," + gchan + "," + bchan + ",1)";
 
-            ctx.fillText(
-              " [" + (planet.supplies + planet.megacredits) + "]",
-              startx,
-              starty,
-            );
+              ctx.fillText(
+                " [" + (planet.supplies + planet.megacredits) + "]",
+                startx,
+                starty,
+              );
+            }
           }
         } else if (plg.pmmcOverlay[12]) {
           // Build Method
@@ -14728,7 +14751,7 @@ box-shadow: 2px 2px 2px #777777}",
           for (var i = 0; i < vgap.myplanets.length; i++) {
             var planet = vgap.myplanets[i];
             if (
-              planet.megacredits + planet.supplies >= 900 &&
+              plg.spendableCredits(planet) >= 900 &&
               planet.duranium >= 120 &&
               planet.tritanium >= 402 &&
               planet.molybdenum >= 340
@@ -14736,7 +14759,7 @@ box-shadow: 2px 2px 2px #777777}",
               if (vgap.getStarbase(planet.id) == null) plg.parray.push(planet);
             if (
               planet.debrisdisk > 0 &&
-              planet.megacredits + planet.supplies >= 480 &&
+              plg.spendableCredits(planet) >= 480 &&
               planet.duranium >= 70 &&
               planet.tritanium >= 242 &&
               planet.molybdenum >= 160
@@ -15226,10 +15249,12 @@ box-shadow: 2px 2px 2px #777777}",
               "<tr><td>Megacredits:&nbsp;</td><td><b>" +
               planet.megacredits +
               "</b></td></tr>";
-            mcsuphtml +=
-              "<tr><td>Supplies:&nbsp;</td><td><b>" +
-              planet.supplies +
-              "</b></td></tr>";
+            if (!plg.noSupplies()) {
+              mcsuphtml +=
+                "<tr><td>Supplies:&nbsp;</td><td><b>" +
+                planet.supplies +
+                "</b></td></tr>";
+            }
             //mcsuphtml += "<tr><td>FC:&nbsp;</td>";
             mcsuphtml +=
               "<tr><td></td><td class=FCDisp data-plid='" +
@@ -15311,40 +15336,42 @@ box-shadow: 2px 2px 2px #777777}",
             reshtml += "<thead></thead>";
 
             // Neutronium
-            reshtml += "<tr><td class='ResName' align='right'>Neu</td>";
-            reshtml +=
-              "<td class='ResSfc' align='right' style='color: " +
-              vgap.plugins["plManagerPlugin"].getMineralSfcColor(
-                planet.neutronium,
-              ) +
-              ";'>" +
-              planet.neutronium +
-              "&nbsp;" +
-              "</td>";
-            reshtml +=
-              "<td class='ResGrd' align='left' style='color: " +
-              vgap.plugins["plManagerPlugin"].getMineralGrdColor(
-                planet.groundneutronium,
-              ) +
-              ";'><b> /&nbsp;" +
-              planet.groundneutronium +
-              "</b></td>";
-            reshtml +=
-              "<td class='ResDen' style='color: " +
-              vgap.plugins["plManagerPlugin"].getMineralDenColor(
-                planet.densityneutronium,
-              ) +
-              ";'>" +
-              planet.densityneutronium +
-              "%</td>";
-            reshtml +=
-              "<td class='ResAmt'>" +
-              vgap.plugins["plManagerPlugin"].miningAmtPerTurn(
-                planet,
-                planet.groundneutronium,
-                planet.densityneutronium,
-              ) +
-              "</td></tr>";
+            if (!plg.unlimitedFuel()) {
+              reshtml += "<tr><td class='ResName' align='right'>Neu</td>";
+              reshtml +=
+                "<td class='ResSfc' align='right' style='color: " +
+                vgap.plugins["plManagerPlugin"].getMineralSfcColor(
+                  planet.neutronium,
+                ) +
+                ";'>" +
+                planet.neutronium +
+                "&nbsp;" +
+                "</td>";
+              reshtml +=
+                "<td class='ResGrd' align='left' style='color: " +
+                vgap.plugins["plManagerPlugin"].getMineralGrdColor(
+                  planet.groundneutronium,
+                ) +
+                ";'><b> /&nbsp;" +
+                planet.groundneutronium +
+                "</b></td>";
+              reshtml +=
+                "<td class='ResDen' style='color: " +
+                vgap.plugins["plManagerPlugin"].getMineralDenColor(
+                  planet.densityneutronium,
+                ) +
+                ";'>" +
+                planet.densityneutronium +
+                "%</td>";
+              reshtml +=
+                "<td class='ResAmt'>" +
+                vgap.plugins["plManagerPlugin"].miningAmtPerTurn(
+                  planet,
+                  planet.groundneutronium,
+                  planet.densityneutronium,
+                ) +
+                "</td></tr>";
+            }
 
             // Duranium
             reshtml += "<tr><td class='ResName' align='right'>Dur</td>";
@@ -15697,10 +15724,12 @@ box-shadow: 2px 2px 2px #777777}",
             "<tr><td><h3><b>Megacredits:&nbsp;" +
             planet.megacredits +
             "</b></h3></td></tr>";
-          pinfohtml +=
-            "<tr><td><h3><b>Supplies:&nbsp;" +
-            planet.supplies +
-            "</b></h3></td></tr>";
+          if (!plg.noSupplies()) {
+            pinfohtml +=
+              "<tr><td><h3><b>Supplies:&nbsp;" +
+              planet.supplies +
+              "</b></h3></td></tr>";
+          }
           pinfohtml += "</table>";
 
           // Set up building info table
@@ -15886,8 +15915,11 @@ box-shadow: 2px 2px 2px #777777}",
           reshtml +=
             "<thead><tr><th colspan=5 align=left style='font-size: 20px;'>Resources</th><th width=100px>Turns to Mine Out</th>";
           reshtml +=
-            "<th align=left style='font-size: 20px;' rowspan = 5>What If There Were:</th><th colspan = 2>20 Mines</th><th colspan = 2>50 Mines</th><th colspan = 2>100 Mines</th><th colspan = 2>200 Mines</th></tr></thead>";
+            "<th align=left style='font-size: 20px;' rowspan = " +
+            (plg.unlimitedFuel() ? 4 : 5) +
+            ">What If There Were:</th><th colspan = 2>20 Mines</th><th colspan = 2>50 Mines</th><th colspan = 2>100 Mines</th><th colspan = 2>200 Mines</th></tr></thead>";
           // Neutronium
+          if (!plg.unlimitedFuel()) {
           reshtml += "<tr><td class='PMResName' align='right'>Neutronium</td>";
           reshtml +=
             "<td class='PMResSfc' align='right' style='color: " +
@@ -16005,6 +16037,7 @@ box-shadow: 2px 2px 2px #777777}",
             ) +
             "</td>";
           reshtml += "</tr>";
+          }
 
           // Duranium
           reshtml += "<tr><td class='PMResName' align='right'>Duranium</td>";
@@ -16415,14 +16448,16 @@ box-shadow: 2px 2px 2px #777777}",
                 "</span> turns.</li>";
           }
 
-          if (plg.predicttimes.ttNMO == -1)
-            predhdrhtml +=
-              "<li>Not mine out neutronium in the next 50 turns.</li>";
-          else
-            predhdrhtml +=
-              "<li>Mine out neutronium in <span class='PredictVal'>" +
-              plg.predicttimes.ttNMO +
-              "</span> turns.</li>";
+          if (!plg.unlimitedFuel()) {
+            if (plg.predicttimes.ttNMO == -1)
+              predhdrhtml +=
+                "<li>Not mine out neutronium in the next 50 turns.</li>";
+            else
+              predhdrhtml +=
+                "<li>Mine out neutronium in <span class='PredictVal'>" +
+                plg.predicttimes.ttNMO +
+                "</span> turns.</li>";
+          }
 
           if (plg.predicttimes.ttDMO == -1)
             predhdrhtml +=
@@ -16632,8 +16667,12 @@ box-shadow: 2px 2px 2px #777777}",
               "<tr><td>Megacredits:&nbsp;<b>" +
               planet.megacredits +
               "</b></td></tr>";
-            pdppmcsuphtml +=
-              "<tr><td>Supplies:&nbsp;<b>" + planet.supplies + "</b></td></tr>";
+            if (!plg.noSupplies()) {
+              pdppmcsuphtml +=
+                "<tr><td>Supplies:&nbsp;<b>" +
+                planet.supplies +
+                "</b></td></tr>";
+            }
             pdppmcsuphtml += "</table>";
 
             // Set up the buildings table
@@ -16684,40 +16723,42 @@ box-shadow: 2px 2px 2px #777777}",
             pdppreshtml += "<thead></thead>";
 
             // Neutronium
-            pdppreshtml += "<tr><td class='ResName' align='right'>Neu</td>";
-            pdppreshtml +=
-              "<td class='ResSfc' align='right' style='color: " +
-              vgap.plugins["plManagerPlugin"].getMineralSfcColor(
-                planet.neutronium,
-              ) +
-              ";'>" +
-              planet.neutronium +
-              "&nbsp;" +
-              "</td>";
-            pdppreshtml +=
-              "<td class='ResGrd' align='left' style='color: " +
-              vgap.plugins["plManagerPlugin"].getMineralGrdColor(
-                planet.groundneutronium,
-              ) +
-              ";'><b> /&nbsp;" +
-              planet.groundneutronium +
-              "</b></td>";
-            pdppreshtml +=
-              "<td class='ResDen' style='color: " +
-              vgap.plugins["plManagerPlugin"].getMineralDenColor(
-                planet.densityneutronium,
-              ) +
-              ";'>" +
-              planet.densityneutronium +
-              "%</td>";
-            pdppreshtml +=
-              "<td class='ResAmt'>" +
-              vgap.plugins["plManagerPlugin"].miningAmtPerTurn(
-                planet,
-                planet.groundneutronium,
-                planet.densityneutronium,
-              ) +
-              "</td></tr>";
+            if (!plg.unlimitedFuel()) {
+              pdppreshtml += "<tr><td class='ResName' align='right'>Neu</td>";
+              pdppreshtml +=
+                "<td class='ResSfc' align='right' style='color: " +
+                vgap.plugins["plManagerPlugin"].getMineralSfcColor(
+                  planet.neutronium,
+                ) +
+                ";'>" +
+                planet.neutronium +
+                "&nbsp;" +
+                "</td>";
+              pdppreshtml +=
+                "<td class='ResGrd' align='left' style='color: " +
+                vgap.plugins["plManagerPlugin"].getMineralGrdColor(
+                  planet.groundneutronium,
+                ) +
+                ";'><b> /&nbsp;" +
+                planet.groundneutronium +
+                "</b></td>";
+              pdppreshtml +=
+                "<td class='ResDen' style='color: " +
+                vgap.plugins["plManagerPlugin"].getMineralDenColor(
+                  planet.densityneutronium,
+                ) +
+                ";'>" +
+                planet.densityneutronium +
+                "%</td>";
+              pdppreshtml +=
+                "<td class='ResAmt'>" +
+                vgap.plugins["plManagerPlugin"].miningAmtPerTurn(
+                  planet,
+                  planet.groundneutronium,
+                  planet.densityneutronium,
+                ) +
+                "</td></tr>";
+            }
 
             // Duranium
             pdppreshtml += "<tr><td class='ResName' align='right'>Dur</td>";
@@ -17123,8 +17164,8 @@ selecting different methods and looking at the Planet Predictor, you can see how
 available - these are the default methods, and any methods you have created for this game.  If you click on a method, it will display text explaining how the method \
 works to you.  You can also remove a method here, by selecting the method you'd like to remove and clicking 'Remove Build Method'.  The method will be removed \
 immediately, and any planets that you had set to use that build method will revert to manual and will have to be reassigned.</p> \
-<p>To create planetary structure construction methods, you can either use the wizard direct entry box.  To use the wizard, you give the method a name, and select or \
-deselect the check box about converting supplies to megacredits, depending on if you want this method to do so or not.</p> \
+<p>To create planetary structure construction methods, you can either use the wizard or the direct entry box.  To use the wizard, you give the method a name, and \
+choose whether supplies may be converted to megacredits: Yes (always), No (never), or Safe (convert only supplies not needed to keep overpopulated colonists alive on harsh climates).</p> \
 <p>Next, select one of the images corresponding to what you want to build.  You can build factories, mines, defense posts, or a combination of factories and mines at a \
 ratio.  Then fill out the amount box with a whole number.  If you select the factories+mines button, you will need to enter the amount of factories, the amount of \
 mines, and select the ratio at which you'd like to build them. After you're happy with your entry, click 'Add to Method', and this piece will be added to your current \
@@ -17133,9 +17174,9 @@ first build 14 factories, say, then 19 mines, then 15 defense posts.  When you'r
 method checks out, ie, you entered valid values for all of the fields, the method will be added to your available methods.</p> \
 <p>You may also enter a method by directly entering a build code.  The build code is what gets stored behind the scenes, and if you know how it works, you can simply \
 enter one directly.  A build code has the following syntax:<br /> <br />\
-(y/n)-(f/m/d/rfm)-Integer-(Int)-(Int)-...<br/><br /> \
+(y/n/s)-(f/m/d/rfm)-Integer-(Int)-(Int)-...<br/><br /> \
 So, for instance, to build 15 factories, and allow supplies to be converted to megacredits, the code would be y-f-15 .  To build 15 mines and then 20 defense posts, \
-without converting supplies to megacredits, the code would be n-m-15-d-20 .  The 'rfm' key has a slightly different syntax; it stands for ratio-factories-mines, and \
+without converting supplies to megacredits, the code would be n-m-15-d-20 .  To convert supplies only when they are not needed for climate support (4 supplies per excess clan above the temperature maximum), use s instead of y or n, e.g. s-f-15 .  The 'rfm' key has a slightly different syntax; it stands for ratio-factories-mines, and \
 you have to give it a maximum factory value, a maximum mine value, and the first part of the ratio, ie, 2:1 would be 2, 5:1 would be 5.  The ratio is always a ratio to \
 1, and it must be a whole number.  So to build up to 400 factories and 150 mines, at a ratio of 7 factories for every mine, allowing supplies to be converted to \
 megacredits, the code would be y-rfm-400-150-7.</p><br/>";
@@ -17237,6 +17278,8 @@ all custom build and tax methods.<br />";
 <b>y-f-14-m-19-d-20</b><br \>&nbsp;</li> \
 <li>To build 30 factories, then 20 mines, then up to 100 factories and 200 mines, building factories at a 2:1 ratio (twice as fast), and not allowing supplies to be converted to megacredits:<br \> \
 <b>n-f-30-m-20-rfm-100-200-2</b><br \>&nbsp;</li> \
+<li>Same as y-..., but only convert supplies that are not needed to prevent climate deaths (keeps 4 supplies per excess clan):<br \> \
+<b>s-f-14-m-19-d-20</b><br \>&nbsp;</li> \
 </ul></p>";
 
         dehtml += "<p><h4>Enter your build code here:&nbsp;&nbsp;</h4>";
@@ -17259,7 +17302,10 @@ all custom build and tax methods.<br />";
 Method Name:<br /> \
 <input id='BMWizName' name='bmnamebox' maxlength='16' type='text'></label> \
 <button id='BMWizAddMethodBtn'>Create Build Method</button><br /><br /> \
-<input type='checkbox' name='wizcheck' id='BMWizBurnSupCheck' value ='c' checked />Convert Supplies to MC?<br /> \
+Convert Supplies to MC:<br /> \
+<input type='radio' name='wizburn' id='BMWizBurnYes' value='y' checked /> Yes (always convert)<br /> \
+<input type='radio' name='wizburn' id='BMWizBurnNo' value='n' /> No (never convert)<br /> \
+<input type='radio' name='wizburn' id='BMWizBurnSafe' value='s' /> Safe (keep climate reserves)<br /> \
 </fieldset>";
 
         var wizbtnhtml =
@@ -17538,12 +17584,11 @@ Method Name:<br /> \
           );
         });
 
-        $("#BMWizBurnSupCheck").click(function () {
-          if (debug) console.log("BMWIZBURNSUP CLICKED");
+        $("input[name='wizburn']").change(function () {
+          if (debug) console.log("BMWIZBURN MODE CHANGED");
           if (plg.bmwizcode != "") {
-            if (plg.bmwizcode.charAt(0) == "n")
-              plg.bmwizcode = "y" + plg.bmwizcode.substring(1);
-            else plg.bmwizcode = "n" + plg.bmwizcode.substring(1);
+            var mode = $("input[name='wizburn']:checked").val() || "y";
+            plg.bmwizcode = mode + plg.bmwizcode.substring(1);
 
             plg.bmwiztext = plg.getBuildCodeText(plg.bmwizcode);
             $("#BMWizCode").replaceWith(
@@ -17561,11 +17606,7 @@ Method Name:<br /> \
 
         $("#BMWizAddBtn").click(function () {
           if (plg.bmwizcode == "") {
-            if ($("#BMWizBurnSupCheck").attr("checked")) {
-              plg.bmwizcode = "y";
-            } else {
-              plg.bmwizcode = "n";
-            }
+            plg.bmwizcode = $("input[name='wizburn']:checked").val() || "y";
           }
           var mcode = "";
 
@@ -18069,29 +18110,29 @@ Parameters: <br />\
       plg.buildmethods[1] = ["Y Build 100", "y-f-14-m-19-rfm-500-100-2-d-100"];
       plg.buildmethods[2] = ["Y Build 200", "y-f-14-m-19-rfm-500-200-2-d-100"];
       plg.buildmethods[3] = [
-        "Y Safe Build 0",
+        "Y Build 0",
         "y-f-14-m-19-d-16-rfm-500-0-2-d-100",
       ];
       plg.buildmethods[4] = [
-        "Y Safe Build 100",
+        "Y Build 100",
         "y-f-14-m-19-d-16-rfm-500-100-2-d-100",
       ];
       plg.buildmethods[5] = [
-        "Y Safe Build 200",
+        "Y Build 200",
         "y-f-14-m-19-d-16-rfm-500-200-2-d-100",
       ];
       plg.buildmethods[6] = ["Y Build 2:1", "y-rfm-500-500-2"];
       plg.buildmethods[7] = ["Y Defense", "y-d-500"];
       plg.buildmethods[8] = [
-        "N Safe Build 0",
+        "N Build 0",
         "n-f-14-m-19-d-16-rfm-500-0-2-d-100",
       ];
       plg.buildmethods[9] = [
-        "N Safe Build 100",
+        "N Build 100",
         "n-f-14-m-19-d-16-rfm-500-100-2-d-100",
       ];
       plg.buildmethods[10] = [
-        "N Safe Build 200",
+        "N Build 200",
         "n-f-14-m-19-d-16-rfm-500-200-2-d-100",
       ];
       plg.buildmethods[11] = ["N Build 0", "n-f-14-m-19-rfm-500-0-2-d-100"];
@@ -18108,12 +18149,61 @@ Parameters: <br />\
         "n-f-14-m-19-rfm-500-200-3-d-100",
       ];
       plg.buildmethods[18] = [
-        "Y Safe Build 200 3",
+        "Y Build 200 3",
         "y-f-14-m-19-d-16-rfm-500-200-3-d-100",
       ];
       plg.buildmethods[19] = [
-        "N Safe Build 200 3",
+        "N Build 200 3",
         "n-f-14-m-19-d-16-rfm-500-200-3-d-100",
+      ];
+      // S = convert supplies to MC, but reserve climate-support supplies
+      plg.buildmethods[20] = [
+        "S Build 0",
+        "s-f-14-m-19-rfm-500-0-2-d-100",
+      ];
+      plg.buildmethods[21] = [
+        "S Build 100",
+        "s-f-14-m-19-rfm-500-100-2-d-100",
+      ];
+      plg.buildmethods[22] = [
+        "S Build 200",
+        "s-f-14-m-19-rfm-500-200-2-d-100",
+      ];
+      plg.buildmethods[23] = [
+        "S Build 0",
+        "s-f-14-m-19-d-16-rfm-500-0-2-d-100",
+      ];
+      plg.buildmethods[24] = [
+        "S Build 100",
+        "s-f-14-m-19-d-16-rfm-500-100-2-d-100",
+      ];
+      plg.buildmethods[25] = [
+        "S Build 200",
+        "s-f-14-m-19-d-16-rfm-500-200-2-d-100",
+      ];
+      plg.buildmethods[26] = [
+        "S Build 500",
+        "s-f-14-m-19-rfm-500-500-2-d-100",
+      ];
+      plg.buildmethods[27] = [
+        "S Build 200 3",
+        "s-f-14-m-19-d-16-rfm-500-200-3-d-100",
+      ];
+      plg.buildmethods[28] = [
+        "S Build 250 3",
+        "s-f-14-m-19-d-16-rfm-500-250-3-d-100",
+      ];
+      plg.buildmethods[29] = [
+        "S Build 250 2",
+        "s-f-14-m-19-d-16-rfm-500-250-2-d-100",
+      ];
+      plg.buildmethods[30] = [
+        "S Build 100 3",
+        "s-f-14-m-19-d-16-rfm-500-100-3-d-100",
+      ];
+      plg.buildmethods[31] = [
+        "S Build 100 2",
+        "s-f-14-m-19-d-16-rfm-500-100-2-d-100",
       ];
     },
 
@@ -18757,14 +18847,26 @@ Parameters: <br />\
         //plg.pplanet.nativehappypoints += nathappychange;
       }
 
-      // Supplies produced
-      plg.pplanet.supplies += plg.pplanet.factories;
-      if (plg.pplanet.nativeclans > 0) {
-        if (plg.pplanet.nativetype == 2) {
-          plg.pplanet.supplies += Math.min(
-            plg.pplanet.clans,
-            Math.floor(plg.pplanet.nativeclans / 100),
-          );
+      // Supplies produced (No Supplies games produce megacredits instead)
+      if (plg.noSupplies()) {
+        plg.pplanet.megacredits += plg.pplanet.factories;
+        if (plg.pplanet.nativeclans > 0) {
+          if (plg.pplanet.nativetype == 2) {
+            plg.pplanet.megacredits += Math.min(
+              plg.pplanet.clans,
+              Math.floor(plg.pplanet.nativeclans / 100),
+            );
+          }
+        }
+      } else {
+        plg.pplanet.supplies += plg.pplanet.factories;
+        if (plg.pplanet.nativeclans > 0) {
+          if (plg.pplanet.nativetype == 2) {
+            plg.pplanet.supplies += Math.min(
+              plg.pplanet.clans,
+              Math.floor(plg.pplanet.nativeclans / 100),
+            );
+          }
         }
       }
 
@@ -18815,17 +18917,19 @@ Parameters: <br />\
       if (plg.pplanet.nativehappypoints >= 70)
         plg.pplanet.nativeclans += plg.myNatPopGrowth(plg.pplanet, true);
 
-      // Overpop dies and eats supplies
+      // Overpop dies and eats supplies (or megacredits in No Supplies games)
       // Death taken care of above, just need to eat supplies
-      if (plg.pplanet.clans > plg.getMaxColonists(plg.pplanet, false))
-        plg.pplanet.supplies = Math.max(
-          0,
-          (plg.pplanet.supplies -= Math.floor(
-            1 +
-              (plg.pplanet.clans - plg.getMaxColonists(plg.pplanet, false)) /
-                40,
-          )),
+      if (plg.pplanet.clans > plg.getMaxColonists(plg.pplanet, false)) {
+        var eaten = Math.floor(
+          1 +
+            (plg.pplanet.clans - plg.getMaxColonists(plg.pplanet, false)) / 40,
         );
+        if (plg.noSupplies()) {
+          plg.pplanet.megacredits = Math.max(0, plg.pplanet.megacredits - eaten);
+        } else {
+          plg.pplanet.supplies = Math.max(0, plg.pplanet.supplies - eaten);
+        }
+      }
 
       // Amorphs eat clans
       // Taken care of above
@@ -18969,7 +19073,7 @@ Parameters: <br />\
 
       if (
         plg.predicttimes.ttSB == -1 &&
-        plg.pplanet.megacredits + plg.pplanet.supplies >= 900 &&
+        plg.spendableCredits(plg.pplanet) >= 900 &&
         plg.pplanet.duranium >= 120 &&
         plg.pplanet.tritanium >= 402 &&
         plg.pplanet.molybdenum >= 340
@@ -19111,14 +19215,17 @@ Parameters: <br />\
     predictChangeFactories: function (change) {
       var plg = vgap.plugins["plManagerPlugin"];
       var planet = plg.pplanet;
+      var noSup = plg.noSupplies();
 
       if (change > 0) {
         //make sure we have enough resources for the change
-        if (planet.supplies < change) change = planet.supplies;
+        if (!noSup && planet.supplies < change) change = planet.supplies;
 
         //check the total amount we can build
-        if (planet.megacredits + planet.supplies < change * 4)
-          change = Math.floor((planet.megacredits + planet.supplies) / 4);
+        var available = noSup
+          ? planet.megacredits
+          : planet.megacredits + planet.supplies;
+        if (available < change * 4) change = Math.floor(available / 4);
 
         //max factories
         var max = plg.maxBldgs(plg.pplanet, 100);
@@ -19129,7 +19236,7 @@ Parameters: <br />\
         if (planet.factories + change > max) change = max - planet.factories;
 
         //sell supplies to reach the change
-        if (planet.megacredits < change * 3) {
+        if (!noSup && planet.megacredits < change * 3) {
           var diff = change * 3 - planet.megacredits;
           planet.megacredits += diff;
           planet.supplies -= diff;
@@ -19137,8 +19244,12 @@ Parameters: <br />\
       } else {
       }
 
-      planet.supplies -= change;
-      planet.megacredits -= change * 3;
+      if (noSup) {
+        planet.megacredits -= change * 4;
+      } else {
+        planet.supplies -= change;
+        planet.megacredits -= change * 3;
+      }
 
       planet.factories += change;
     },
@@ -19146,14 +19257,17 @@ Parameters: <br />\
     predictChangeMines: function (change) {
       var plg = vgap.plugins["plManagerPlugin"];
       var planet = plg.pplanet;
+      var noSup = plg.noSupplies();
 
       if (change > 0) {
         //make sure we have enough resources for the change
-        if (planet.supplies < change) change = planet.supplies;
+        if (!noSup && planet.supplies < change) change = planet.supplies;
 
         //check the total amount we can build
-        if (planet.megacredits + planet.supplies < change * 5)
-          change = Math.floor((planet.megacredits + planet.supplies) / 5);
+        var available = noSup
+          ? planet.megacredits
+          : planet.megacredits + planet.supplies;
+        if (available < change * 5) change = Math.floor(available / 5);
 
         //max mines
         var max = plg.maxBldgs(plg.pplanet, 200);
@@ -19164,7 +19278,7 @@ Parameters: <br />\
         if (planet.mines + change > max) change = max - planet.mines;
 
         //sell supplies to reach the change
-        if (planet.megacredits < change * 4) {
+        if (!noSup && planet.megacredits < change * 4) {
           var diff = change * 4 - planet.megacredits;
           planet.megacredits += diff;
           planet.supplies -= diff;
@@ -19172,8 +19286,12 @@ Parameters: <br />\
       } else {
       }
 
-      planet.supplies -= change;
-      planet.megacredits -= change * 4;
+      if (noSup) {
+        planet.megacredits -= change * 5;
+      } else {
+        planet.supplies -= change;
+        planet.megacredits -= change * 4;
+      }
 
       planet.mines += change;
     },
@@ -19181,14 +19299,17 @@ Parameters: <br />\
     predictChangeDefense: function (change) {
       var plg = vgap.plugins["plManagerPlugin"];
       var planet = plg.pplanet;
+      var noSup = plg.noSupplies();
 
       if (change > 0) {
         //make sure we have enough resources for the change
-        if (planet.supplies < change) change = planet.supplies;
+        if (!noSup && planet.supplies < change) change = planet.supplies;
 
         //check the total amount we can build
-        if (planet.megacredits + planet.supplies < change * 11)
-          change = Math.floor((planet.megacredits + planet.supplies) / 11);
+        var available = noSup
+          ? planet.megacredits
+          : planet.megacredits + planet.supplies;
+        if (available < change * 11) change = Math.floor(available / 11);
 
         //max defense
         var max = this.maxBldgs(plg.pplanet);
@@ -19199,7 +19320,7 @@ Parameters: <br />\
         if (planet.defense + change > max) change = max - planet.defense;
 
         //sell supplies to reach the change
-        if (planet.megacredits < change * 10) {
+        if (!noSup && planet.megacredits < change * 10) {
           var diff = change * 10 - planet.megacredits;
           planet.megacredits += diff;
           planet.supplies -= diff;
@@ -19207,8 +19328,12 @@ Parameters: <br />\
       } else {
       }
 
-      planet.supplies -= change;
-      planet.megacredits -= change * 10;
+      if (noSup) {
+        planet.megacredits -= change * 11;
+      } else {
+        planet.supplies -= change;
+        planet.megacredits -= change * 10;
+      }
 
       planet.defense += change;
     },
@@ -19620,7 +19745,10 @@ Parameters: <br />\
       );
       if (overPopulation > 0) {
         //recalculate maxsupported/overpopulation
-        maxSupported = maxSupported + Math.round((planet.supplies * 10) / 40);
+        var supportPool = this.noSupplies()
+          ? planet.megacredits
+          : planet.supplies;
+        maxSupported = maxSupported + Math.round((supportPool * 10) / 40);
         overPopulation = Math.ceil(
           (planet.clans - maxSupported) * (climateDeathRate / 100),
         );
@@ -19629,6 +19757,21 @@ Parameters: <br />\
         colGrowth = -1 * Math.max(0, overPopulation);
       }
       return colGrowth;
+    },
+
+    /*
+     * Supplies needed to fully protect current colonists from climate death.
+     * Per planets.nu: ROUND(supplies / 4) clans can be supported beyond the
+     * temperature-based maximum. Returns 0 when not overpopulated.
+     */
+    getClimateSupplyReserve: function (planet) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      if (plg.noSupplies()) return 0;
+      var maxSupported = plg.getMaxColonists(planet, false);
+      var excess = planet.clans - maxSupported;
+      if (excess <= 0) return 0;
+      // Four supplies per excess clan (Clans Supported = ROUND(supplies / 4))
+      return excess * 4;
     },
 
     showPlanetDetailFromStarmap: function (id) {
@@ -19663,6 +19806,22 @@ Parameters: <br />\
 
 				return "#FFFFFFF";
 				*/
+    },
+
+    unlimitedFuel: function () {
+      return !!(vgap.settings && vgap.settings.unlimitedfuel);
+    },
+
+    noSupplies: function () {
+      return !!(
+        vgap.settings &&
+        (vgap.settings.nosupplies || vgap.settings.unlimitedsupplies)
+      );
+    },
+
+    spendableCredits: function (planet) {
+      if (this.noSupplies()) return planet.megacredits;
+      return planet.megacredits + planet.supplies;
     },
 
     getMineralGrdColor: function (amt) {
@@ -19783,18 +19942,21 @@ Parameters: <br />\
 			},
 			*/
     getPossFacts: function (mc, sup) {
+      if (this.noSupplies()) return Math.truncate(mc / 4);
       if (mc == 0) return 0;
       if (sup < mc / 3) return sup;
       else return Math.truncate(mc / 3);
     },
 
     getPossMines: function (mc, sup) {
+      if (this.noSupplies()) return Math.truncate(mc / 5);
       if (mc == 0) return 0;
       if (sup < mc / 4) return sup;
       else return Math.truncate(mc / 4);
     },
 
     getPossDef: function (mc, sup) {
+      if (this.noSupplies()) return Math.truncate(mc / 11);
       if (mc == 0) return 0;
       if (sup < mc / 10) return sup;
       else return Math.truncate(mc / 10);
@@ -20519,7 +20681,7 @@ Parameters: <br />\
 
 
         planet.pmscore2 = 0;
-        if (!vgap.settings.unlimitedfuel) {
+        if (!plg.unlimitedFuel()) {
           planet.pmscore2 += planet.groundneutronium * (planet.densityneutronium / 100);
         }
         planet.pmscore2 += planet.groundduranium * (planet.densityduranium / 100);
@@ -20631,9 +20793,11 @@ Parameters: <br />\
         checkarray[0] == "y" ||
         checkarray[0] == "Y" ||
         checkarray[0] == "n" ||
-        checkarray[0] == "N"
+        checkarray[0] == "N" ||
+        checkarray[0] == "s" ||
+        checkarray[0] == "S"
       )) {
-        if (debug) console.log("Returning false on yn check");
+        if (debug) console.log("Returning false on yns check");
         return false;
       }
 
@@ -20683,12 +20847,17 @@ Parameters: <br />\
         checkarray[0] == "y" ||
         checkarray[0] == "Y" ||
         checkarray[0] == "n" ||
-        checkarray[0] == "N"
+        checkarray[0] == "N" ||
+        checkarray[0] == "s" ||
+        checkarray[0] == "S"
       )) {
-        if (debug) console.log("Returning false on yn check");
+        if (debug) console.log("Returning false on yns check");
         return "Invalid Build Code";
       } else if (checkarray[0] == "y" || checkarray[0] == "Y")
         bctext += "Convert supplies to megacredits if necessary.  ";
+      else if (checkarray[0] == "s" || checkarray[0] == "S")
+        bctext +=
+          "Convert supplies to megacredits if necessary, but reserve enough supplies for climate support so overpopulated colonists do not die.  ";
       else bctext += "Do not convert supplies to megacredits.  ";
 
       for (var i = 1; i < checkarray.length; i += 2) {
@@ -20773,12 +20942,16 @@ Parameters: <br />\
     },
 
     changeMines: function (planet, number) {
+      var noSup = this.noSupplies();
       if (number > 0) {
-        if (planet.supplies < number) {
+        if (!noSup && planet.supplies < number) {
           number = planet.supplies;
         }
-        if (planet.megacredits + planet.supplies < number * 5) {
-          number = Math.floor((planet.megacredits + planet.supplies) / 5);
+        var available = noSup
+          ? planet.megacredits
+          : planet.megacredits + planet.supplies;
+        if (available < number * 5) {
+          number = Math.floor(available / 5);
         }
         var c = this.maxBuilding(planet, 200);
         if (planet.mines > c) {
@@ -20787,7 +20960,7 @@ Parameters: <br />\
         if (planet.mines + number > c) {
           number = c - planet.mines;
         }
-        if (planet.megacredits < number * 4) {
+        if (!noSup && planet.megacredits < number * 4) {
           var b = number * 4 - planet.megacredits;
           planet.megacredits += b;
           planet.supplies -= b;
@@ -20798,19 +20971,27 @@ Parameters: <br />\
           number = planet.builtmines * -1;
         }
       }
-      planet.supplies -= number;
-      planet.megacredits -= number * 4;
+      if (noSup) {
+        planet.megacredits -= number * 5;
+      } else {
+        planet.supplies -= number;
+        planet.megacredits -= number * 4;
+      }
       planet.builtmines += number;
       planet.mines += number;
     },
 
     changeFactories: function (planet, number) {
+      var noSup = this.noSupplies();
       if (number > 0) {
-        if (planet.supplies < number) {
+        if (!noSup && planet.supplies < number) {
           number = planet.supplies;
         }
-        if (planet.megacredits + planet.supplies < number * 4) {
-          number = Math.floor((planet.megacredits + planet.supplies) / 4);
+        var available = noSup
+          ? planet.megacredits
+          : planet.megacredits + planet.supplies;
+        if (available < number * 4) {
+          number = Math.floor(available / 4);
         }
         var c = this.maxBuilding(planet, 100);
         if (planet.factories > c) {
@@ -20820,7 +21001,7 @@ Parameters: <br />\
           number = c - planet.factories;
         }
 
-        if (planet.megacredits < number * 3) {
+        if (!noSup && planet.megacredits < number * 3) {
           var b = number * 3 - planet.megacredits;
           planet.megacredits += b;
           planet.supplies -= b;
@@ -20831,19 +21012,27 @@ Parameters: <br />\
           number = planet.builtfactories * -1;
         }
       }
-      planet.supplies -= number;
-      planet.megacredits -= number * 3;
+      if (noSup) {
+        planet.megacredits -= number * 4;
+      } else {
+        planet.supplies -= number;
+        planet.megacredits -= number * 3;
+      }
       planet.builtfactories += number;
       planet.factories += number;
     },
 
     changeDefense: function (planet, number) {
+      var noSup = this.noSupplies();
       if (number > 0) {
-        if (planet.supplies < number) {
+        if (!noSup && planet.supplies < number) {
           number = planet.supplies;
         }
-        if (planet.megacredits + planet.supplies < number * 11) {
-          number = Math.floor((planet.megacredits + planet.supplies) / 11);
+        var available = noSup
+          ? planet.megacredits
+          : planet.megacredits + planet.supplies;
+        if (available < number * 11) {
+          number = Math.floor(available / 11);
         }
         var c = this.maxBuilding(planet, 50);
         if (planet.defense > c) {
@@ -20852,7 +21041,7 @@ Parameters: <br />\
         if (planet.defense + number > c) {
           number = c - planet.defense;
         }
-        if (planet.megacredits < number * 10) {
+        if (!noSup && planet.megacredits < number * 10) {
           var b = number * 10 - planet.megacredits;
           planet.megacredits += b;
           planet.supplies -= b;
@@ -20863,8 +21052,12 @@ Parameters: <br />\
           number = planet.builtdefense * -1;
         }
       }
-      planet.supplies -= number;
-      planet.megacredits -= number * 10;
+      if (noSup) {
+        planet.megacredits -= number * 11;
+      } else {
+        planet.supplies -= number;
+        planet.megacredits -= number * 10;
+      }
       planet.builtdefense += number;
       planet.defense += number;
     },
@@ -20884,18 +21077,55 @@ Parameters: <br />\
       var buildcount;
       var buildtype;
       var burnsups;
+      var safeburn = false;
       var plg = vgap.plugins["plManagerPlugin"];
 
       if (buildarray[0] == "y" || buildarray[0] == "Y") burnsups = true;
-      else burnsups = false;
+      else if (buildarray[0] == "s" || buildarray[0] == "S") {
+        // Safe burn: convert supplies to MC, but keep a climate reserve
+        burnsups = true;
+        safeburn = true;
+      } else burnsups = false;
 
-      console.log("IN BUILD BUILDINGS: BURNSUPS = " + burnsups);
+      if (plg.noSupplies()) {
+        burnsups = true;
+        safeburn = false;
+      }
+
+      console.log(
+        "IN BUILD BUILDINGS: BURNSUPS = " +
+          burnsups +
+          ", SAFEBURN = " +
+          safeburn,
+      );
 
       var planet;
       if (predict) planet = plg.pplanet;
       else {
         planet = plg.getBuildPlanet();
         //vgap.planetScreen.load(planet);
+      }
+
+      // Safe mode: temporarily hide supplies needed for climate survival so
+      // changeFactories/Mines/Defense (and RFM calc) cannot spend them as MC
+      // or building materials. Restored after the build sequence.
+      var supplyReserve = 0;
+      if (safeburn) {
+        supplyReserve = plg.getClimateSupplyReserve(planet);
+        if (supplyReserve > planet.supplies) supplyReserve = planet.supplies;
+        if (debug)
+          console.log(
+            "Safe burn climate reserve: " +
+              supplyReserve +
+              " supplies (clans=" +
+              planet.clans +
+              ", temp=" +
+              planet.temp +
+              ", maxSupported=" +
+              plg.getMaxColonists(planet, false) +
+              ")",
+          );
+        planet.supplies -= supplyReserve;
       }
 
       numbuildtemp = 0;
@@ -21065,6 +21295,19 @@ Parameters: <br />\
           }
         }
       }
+
+      // Restore climate supply reserve after safe-burn building
+      if (safeburn && supplyReserve > 0) {
+        planet.supplies += supplyReserve;
+        if (debug)
+          console.log(
+            "Safe burn: restored " +
+              supplyReserve +
+              " climate-reserve supplies (now " +
+              planet.supplies +
+              ")",
+          );
+      }
     },
 
     calcRFMBuild: function (numf, numm, ratio, burnsups, mc, sup) {
@@ -21075,6 +21318,22 @@ Parameters: <br />\
       var suptemp = sup;
       var mctemp = mc;
       var cnt = 0;
+      if (this.noSupplies()) {
+        for (var i = 0; i < numf; i++) {
+          if (mctemp >= 4) {
+            result.facts++;
+            mctemp -= 4;
+          }
+          if (cnt % ratio == 0 && result.mines < numm) {
+            if (mctemp >= 5) {
+              result.mines++;
+              mctemp -= 5;
+            }
+          }
+          cnt++;
+        }
+        return result;
+      }
       for (var i = 0; i < numf; i++) {
         if (suptemp >= 1 && mctemp >= 3) {
           result.facts++;
