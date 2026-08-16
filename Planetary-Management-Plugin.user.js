@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.14.4
+// @version       2026.8.15
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,7 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.15  Replace overlay expander PNG with Font Awesome menu icon
 // @history       2026.8.14.4 Hide supplies and use megacredits-only building/prediction
 //                            when the no-supplies (unlimited supplies) setting is on
 // @history       2026.8.14.3 Hide neutronium in overlays, resource tables, and predictions
@@ -64,7 +65,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.14.4";
+  var plugin_version = "2026.8.15";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -384,15 +385,18 @@ box-shadow: 2px 2px 2px #777777}",
         "#PMMapExpBtn { \
 position: absolute; \
 color: white; \
-font-size: 12px; \
+font-size: 14px; \
 text-align: center; \
-font-weight: bold; \
+font-weight: normal; \
 top: 166px; \
 right: 6px; \
-width: 15px; \
+width: 22px; \
+line-height: 22px; \
 background-color: rgba(30,30,30,30.2); \
 padding: 0px; \
-box-shadow: 1px 1px 1px #777777}",
+box-shadow: 1px 1px 1px #777777; \
+cursor: pointer} \
+#PMMapExpBtn:hover { color: #ffd54a; }",
       );
 
       vgap.plugins["plManagerPlugin"].addCss(
@@ -542,10 +546,6 @@ box-shadow: 2px 2px 2px #777777}",
         plg.pmmiNormal[i] = new Image();
         plg.pmmiHover[i] = new Image();
       }
-
-      plg.pmmiExpImg = new Image();
-      plg.pmmiExpImg.src =
-        "https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/expmenu.png";
 
       plg.pmmiNormal[0].src =
         "https://raw.githubusercontent.com/berapp/planets-nu-icons/refs/heads/main/neut2mid.png";
@@ -728,9 +728,7 @@ box-shadow: 2px 2px 2px #777777}",
       // The menu is hidden, just show the little expander button
       var expbtnhtml = "";
       expbtnhtml +=
-        '<div id="PMMapExpBtn"><img title="Show Overlays" src="' +
-        vgap.plugins["plManagerPlugin"].pmmiExpImg.src +
-        '"></img></div>';
+        '<div id="PMMapExpBtn" title="Show Overlays"><i class="fa-solid fa-bars"></i></div>';
       $(expbtnhtml).appendTo(vgap.container);
 
       var mapmenuhtml = "";
@@ -830,7 +828,7 @@ box-shadow: 2px 2px 2px #777777}",
         );
         $("#PlanetsLoc").css("right", "68px");
         $("#PMMapBtnBar").css("right", "50px");
-        $("#PMMapExpBtn").css("right", "-25px");
+        $("#PMMapExpBtn").css("right", "-30px");
       } else {
         console.log(
           "SHOWOVERLAY: " +
@@ -886,7 +884,7 @@ box-shadow: 2px 2px 2px #777777}",
         );
         $("#PMMapExpBtn").animate(
           {
-            right: "-25px",
+            right: "-30px",
           },
           400,
         );
@@ -2317,7 +2315,6 @@ box-shadow: 2px 2px 2px #777777}",
     pmmiNormal: [],
     pmmiHover: [],
     pmmBtns: [],
-    pmmiExpImg: "",
     showOverlayMenu: true,
 
     // PM Map Image variables
