@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.15.3
+// @version       2026.8.15.4
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,7 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.15.4  Refresh PLBuildStatus after each planet during analyse and build
 // @history       2026.8.15.3  Rename Planetary Score (pmscore2) to Ground Resource Score (grscore)
 // @history       2026.8.15.2  Replace analyse/build image icons with labeled text buttons
 // @history       2026.8.15.1  Build method amounts accept the keyword max, using the
@@ -69,7 +70,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.15.3";
+  var plugin_version = "2026.8.15.4";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -2300,6 +2301,7 @@ background: #1a1a1a;}",
     savedindex: -1,
     buildstatustext: 0,
     ambuilding: false,
+    amanalysing: false,
     savestarted: false,
     bmarray: [],
     ntarray: [],
@@ -15617,10 +15619,12 @@ background: #1a1a1a;}",
         });
 
         $(".BuildButton").click(function () {
+          if (plg.ambuilding || plg.amanalysing) return;
           plg.executePlanetUpdate();
         });
 
         $(".AnalyseButton").click(function () {
+          if (plg.ambuilding || plg.amanalysing) return;
           plg.executePlanetAnalyse();
         });
 
@@ -20541,6 +20545,24 @@ Parameters: <br />\
       }
     },
 
+    refreshBuildStatus: function () {
+      $(".PLBuildStatus").text(
+        vgap.plugins["plManagerPlugin"].buildstatustext || "",
+      );
+    },
+
+    // Yield after updating the DOM so the browser can paint progress.
+    afterUiPaint: function (fn) {
+      var run = function () {
+        window.setTimeout(fn, 0);
+      };
+      if (typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(run);
+      } else {
+        run();
+      }
+    },
+
     executePlanetUpdate: function () {
       console.log("ENTERED EXPLUP");
       var plg = vgap.plugins["plManagerPlugin"];
@@ -20556,30 +20578,24 @@ Parameters: <br />\
         vgap.plugins["plManagerPlugin"].displayPM(0);
         //vgap.plugins["plManagerPlugin"].saveChanges();
         vgap.save();
-      } else {
-        var planet =
-          plg.parray[vgap.plugins["plManagerPlugin"].planetbuildindex];
-        vgap.plugins["plManagerPlugin"].ambuilding = true;
-        vgap.plugins["plManagerPlugin"].buildstatustext =
-          "Building " +
-          (vgap.plugins["plManagerPlugin"].planetbuildindex + 1) +
-          " of " +
-          plg.parray.length +
-          "  #" +
-          planet.id +
-          " - " +
-          planet.name;
-        //vgap.plugins["plManagerPlugin"].displayPM(0);
+        return;
+      }
 
-        //<td class=PLBuildStatus>" + vgap.plugins["plManagerPlugin"].buildstatustext + "</td>
-        $(".PLBuildStatus").replaceWith(
-          "<td class=PLBuildStatus>" +
-            vgap.plugins["plManagerPlugin"].buildstatustext +
-            "</td>",
-        );
+      var planet =
+        plg.parray[vgap.plugins["plManagerPlugin"].planetbuildindex];
+      vgap.plugins["plManagerPlugin"].ambuilding = true;
+      vgap.plugins["plManagerPlugin"].buildstatustext =
+        "Building " +
+        (vgap.plugins["plManagerPlugin"].planetbuildindex + 1) +
+        " of " +
+        plg.parray.length +
+        "  #" +
+        planet.id +
+        " - " +
+        planet.name;
+      vgap.plugins["plManagerPlugin"].refreshBuildStatus();
 
-        // There are still more planets to do
-
+      vgap.plugins["plManagerPlugin"].afterUiPaint(function () {
         // Randomize Friendly Code if that's selected
         if (plg.fcrandomize == true) {
           // Randomize
@@ -20660,9 +20676,7 @@ Parameters: <br />\
         //plg.quickBreak();
         vgap.plugins["plManagerPlugin"].planetbuildindex++;
         vgap.plugins["plManagerPlugin"].executePlanetUpdate();
-      }
-
-      return;
+      });
     },
 
     executePlanetAnalyse: function () {
@@ -20681,31 +20695,24 @@ Parameters: <br />\
         vgap.plugins["plManagerPlugin"].displayPM(0);
         //vgap.plugins["plManagerPlugin"].saveChanges();
         // vgap.save();
-      } else {
-        var planet =
-          plg.parray[vgap.plugins["plManagerPlugin"].planetanalyseindex];
-        vgap.plugins["plManagerPlugin"].amanalysing = true;
-        vgap.plugins["plManagerPlugin"].buildstatustext =
-          "Analysing " +
-          (vgap.plugins["plManagerPlugin"].planetanalyseindex + 1) +
-          " of " +
-          plg.parray.length +
-          "  #" +
-          planet.id +
-          " - " +
-          planet.name;
-        //vgap.plugins["plManagerPlugin"].displayPM(0);
+        return;
+      }
 
-        //<td class=PLBuildStatus>" + vgap.plugins["plManagerPlugin"].buildstatustext + "</td>
-        $(".PLBuildStatus").replaceWith(
-          "<td class=PLBuildStatus>" +
-            vgap.plugins["plManagerPlugin"].buildstatustext +
-            "</td>",
-        );
+      var planet =
+        plg.parray[vgap.plugins["plManagerPlugin"].planetanalyseindex];
+      vgap.plugins["plManagerPlugin"].amanalysing = true;
+      vgap.plugins["plManagerPlugin"].buildstatustext =
+        "Analysing " +
+        (vgap.plugins["plManagerPlugin"].planetanalyseindex + 1) +
+        " of " +
+        plg.parray.length +
+        "  #" +
+        planet.id +
+        " - " +
+        planet.name;
+      vgap.plugins["plManagerPlugin"].refreshBuildStatus();
 
-        // There are still more planets to do
-
-
+      vgap.plugins["plManagerPlugin"].afterUiPaint(function () {
         planet.grscore = 0;
         if (!plg.unlimitedFuel()) {
           planet.grscore += planet.groundneutronium * (planet.densityneutronium / 100);
@@ -20746,9 +20753,7 @@ Parameters: <br />\
         vgap.plugins["plManagerPlugin"].planetanalyseindex++;
         console.log("Analysed planet " + vgap.plugins["plManagerPlugin"].planetanalyseindex + " of " + plg.parray.length);
         vgap.plugins["plManagerPlugin"].executePlanetAnalyse();
-      }
-
-      return;
+      });
     },
 
     quickBreak: function () {
