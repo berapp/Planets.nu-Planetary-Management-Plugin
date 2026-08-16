@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.15
+// @version       2026.8.15.1
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,8 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.15.1  Build method amounts accept the keyword max, using the
+//                             planet's current maximum allowed structures
 // @history       2026.8.15  Replace overlay expander PNG with Font Awesome menu icon
 // @history       2026.8.14.4 Hide supplies and use megacredits-only building/prediction
 //                            when the no-supplies (unlimited supplies) setting is on
@@ -65,7 +67,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.15";
+  var plugin_version = "2026.8.15.1";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -17171,12 +17173,14 @@ first build 14 factories, say, then 19 mines, then 15 defense posts.  When you'r
 method checks out, ie, you entered valid values for all of the fields, the method will be added to your available methods.</p> \
 <p>You may also enter a method by directly entering a build code.  The build code is what gets stored behind the scenes, and if you know how it works, you can simply \
 enter one directly.  A build code has the following syntax:<br /> <br />\
-(y/n/s)-(f/m/d/rfm)-Integer-(Int)-(Int)-...<br/><br /> \
+(y/n/s)-(f/m/d/rfm)-(Integer or max)-(Int or max)-(Int)-...<br/><br /> \
 So, for instance, to build 15 factories, and allow supplies to be converted to megacredits, the code would be y-f-15 .  To build 15 mines and then 20 defense posts, \
 without converting supplies to megacredits, the code would be n-m-15-d-20 .  To convert supplies only when they are not needed for climate support (4 supplies per excess clan above the temperature maximum), use s instead of y or n, e.g. s-f-15 .  The 'rfm' key has a slightly different syntax; it stands for ratio-factories-mines, and \
 you have to give it a maximum factory value, a maximum mine value, and the first part of the ratio, ie, 2:1 would be 2, 5:1 would be 5.  The ratio is always a ratio to \
 1, and it must be a whole number.  So to build up to 400 factories and 150 mines, at a ratio of 7 factories for every mine, allowing supplies to be converted to \
-megacredits, the code would be y-rfm-400-150-7.</p><br/>";
+megacredits, the code would be y-rfm-400-150-7.  You may use the keyword max in place of a number for factories, mines, or defense posts.  This builds up to the \
+maximum number of that structure the planet is currently allowed to have based on its colonist population.  For example, y-f-max builds as many factories as the \
+planet can support.  You can mix max with numbers, such as y-f-14-m-19-rfm-max-max-2-d-max.  The ratio after rfm must still be a whole number.</p><br/>";
 
         html +=
           "<p><iframe width='560' height='315' src='//www.youtube.com/embed/5v52gSlmC6k' frameborder='0' allowfullscreen></iframe></p>";
@@ -17277,6 +17281,8 @@ all custom build and tax methods.<br />";
 <b>n-f-30-m-20-rfm-100-200-2</b><br \>&nbsp;</li> \
 <li>Same as y-..., but only convert supplies that are not needed to prevent climate deaths (keeps 4 supplies per excess clan):<br \> \
 <b>s-f-14-m-19-d-20</b><br \>&nbsp;</li> \
+<li>To build 14 factories, then 19 mines, then factories and mines up to the planet's current maximum at a 2:1 ratio, then maximum defense, converting supplies if necessary:<br \> \
+<b>y-f-14-m-19-rfm-max-max-2-d-max</b><br \>&nbsp;</li> \
 </ul></p>";
 
         dehtml += "<p><h4>Enter your build code here:&nbsp;&nbsp;</h4>";
@@ -17318,10 +17324,10 @@ Convert Supplies to MC:<br /> \
 <img src='https://planets.nu/img/icons/mine.png' height='25' width='25'></img> \
 <br /> \
 <div id='BMWizAmt1'> \
-<label>Amount: \
+<label>Amount (number or max): \
 <input type='text' id='BMWizAmtTxt1'></label></div> \
 <div id='BMWizAmt2' style='display: none;'> \
-<label>2nd Amount: \
+<label>2nd Amount (number or max): \
 <input type='text' id='BMWizAmtTxt2'></label></div> \
 <div id='BMWizRatio' style='display: none;'> \
 <label>Ratio: </label>\
@@ -17646,7 +17652,7 @@ Convert Supplies to MC:<br /> \
             );
           } else {
             $("#BMWizStatusText").replaceWith(
-              "<td colspan = 2 align='center' color='red' id='BMWizStatusText'>Invalid Code Addition.  Amounts must be whole numbers.</td>",
+              "<td colspan = 2 align='center' color='red' id='BMWizStatusText'>Invalid Code Addition.  Amounts must be whole numbers or max.</td>",
             );
           }
         });
@@ -20814,8 +20820,8 @@ Parameters: <br />\
         }
         if (checkarray[i] == "rfm") {
           if (!(
-            vgap.plugins["plManagerPlugin"].isInteger(checkarray[i + 1]) &&
-            vgap.plugins["plManagerPlugin"].isInteger(checkarray[i + 2]) &&
+            vgap.plugins["plManagerPlugin"].isBuildAmount(checkarray[i + 1]) &&
+            vgap.plugins["plManagerPlugin"].isBuildAmount(checkarray[i + 2]) &&
             vgap.plugins["plManagerPlugin"].isInteger(checkarray[i + 3])
           )) {
             if (debug) console.log("Returning false on rfm integer check");
@@ -20823,7 +20829,7 @@ Parameters: <br />\
           }
           i += 2;
         } else if (
-          !vgap.plugins["plManagerPlugin"].isInteger(checkarray[i + 1])
+          !vgap.plugins["plManagerPlugin"].isBuildAmount(checkarray[i + 1])
         ) {
           if (debug) console.log("Returning false on integer check");
           return false;
@@ -20839,6 +20845,7 @@ Parameters: <br />\
     getBuildCodeText: function (mcode) {
       var checkarray = mcode.split("-");
       var bctext = "";
+      var plg = vgap.plugins["plManagerPlugin"];
 
       if (!(
         checkarray[0] == "y" ||
@@ -20861,16 +20868,19 @@ Parameters: <br />\
         if (i == 1) bctext += "Build up to ";
         else bctext += "then build up to ";
 
-        if (checkarray[i] == "f") bctext += checkarray[i + 1] + " factories, ";
+        if (checkarray[i] == "f")
+          bctext += plg.formatBuildAmount(checkarray[i + 1]) + " factories, ";
 
-        if (checkarray[i] == "m") bctext += checkarray[i + 1] + " mines, ";
+        if (checkarray[i] == "m")
+          bctext += plg.formatBuildAmount(checkarray[i + 1]) + " mines, ";
         if (checkarray[i] == "d")
-          bctext += checkarray[i + 1] + " defense posts, ";
+          bctext +=
+            plg.formatBuildAmount(checkarray[i + 1]) + " defense posts, ";
         if (checkarray[i] == "rfm") {
           bctext +=
-            checkarray[i + 1] +
+            plg.formatBuildAmount(checkarray[i + 1]) +
             " factories and up to " +
-            checkarray[i + 2] +
+            plg.formatBuildAmount(checkarray[i + 2]) +
             " mines at a ratio of " +
             checkarray[i + 3] +
             ":1, ";
@@ -20888,6 +20898,31 @@ Parameters: <br />\
         Object.prototype.toString.call(possibleInteger) !== "[object Array]" &&
         /^[\d]+$/.test(possibleInteger)
       );
+    },
+
+    isMaxKeyword: function (value) {
+      return typeof value === "string" && value.toLowerCase() === "max";
+    },
+
+    isBuildAmount: function (value) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      return plg.isInteger(value) || plg.isMaxKeyword(value);
+    },
+
+    formatBuildAmount: function (value) {
+      if (vgap.plugins["plManagerPlugin"].isMaxKeyword(value))
+        return "the maximum allowed";
+      return value;
+    },
+
+    resolveBuildAmount: function (value, planet, buildingType) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      if (plg.isMaxKeyword(value)) {
+        if (buildingType == "f") return plg.maxBldgs(planet, 100);
+        if (buildingType == "m") return plg.maxBldgs(planet, 200);
+        if (buildingType == "d") return plg.maxBldgs(planet, 50);
+      }
+      return parseInt(value, 10);
     },
 
     buildMethodCompleted: function (planet) {
@@ -20909,7 +20944,14 @@ Parameters: <br />\
 
         for (var i = 1; i < buildarray.length; i += 2) {
           buildtype = buildarray[i];
-          buildcount = buildarray[i + 1];
+          if (buildtype == "rfm")
+            buildcount = plg.resolveBuildAmount(buildarray[i + 1], planet, "f");
+          else
+            buildcount = plg.resolveBuildAmount(
+              buildarray[i + 1],
+              planet,
+              buildtype,
+            );
 
           //console.log("ENTERED BUILD, buildtype = " + buildtype);
 
@@ -20920,7 +20962,11 @@ Parameters: <br />\
           if (buildtype == "d") if (planet.defense < buildcount) return false;
 
           if (buildtype == "rfm") {
-            var secondarybuildcount = buildarray[i + 2];
+            var secondarybuildcount = plg.resolveBuildAmount(
+              buildarray[i + 2],
+              planet,
+              "m",
+            );
             i += 2;
             if (planet.factories < buildcount) return false;
             if (planet.mines < secondarybuildcount) return false;
@@ -21068,6 +21114,9 @@ Parameters: <br />\
      *
      * f-10-rfm-100-25-2-d-5
      * Would build 10 factories, then 100 factories and 25 mines at a 2:1 ratio, then 5 defense posts
+     *
+     * Amounts may also be the keyword max, which uses the planet's current
+     * maximum allowed structures (based on colonist population).
      */
     buildBldgsGeneral: function (buildplan, predict) {
       var buildarray = buildplan.split("-");
@@ -21139,7 +21188,14 @@ Parameters: <br />\
 
       for (var i = 1; i < buildarray.length; i += 2) {
         buildtype = buildarray[i];
-        buildcount = buildarray[i + 1];
+        if (buildtype == "rfm")
+          buildcount = plg.resolveBuildAmount(buildarray[i + 1], planet, "f");
+        else
+          buildcount = plg.resolveBuildAmount(
+            buildarray[i + 1],
+            planet,
+            buildtype,
+          );
 
         if (debug) console.log("ENTERED BUILD, buildtype = " + buildtype);
 
@@ -21223,7 +21279,11 @@ Parameters: <br />\
         if (buildtype == "rfm") {
           // Building factories and mines according to a ratio
 
-          var secondarybuildcount = buildarray[i + 2];
+          var secondarybuildcount = plg.resolveBuildAmount(
+            buildarray[i + 2],
+            planet,
+            "m",
+          );
           ratio = buildarray[i + 3];
           i += 2;
 
