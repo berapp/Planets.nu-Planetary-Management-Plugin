@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.15.1
+// @version       2026.8.15.2
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,7 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.15.2  Replace analyse/build image icons with labeled text buttons
 // @history       2026.8.15.1  Build method amounts accept the keyword max, using the
 //                             planet's current maximum allowed structures
 // @history       2026.8.15  Replace overlay expander PNG with Font Awesome menu icon
@@ -67,7 +68,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.15.1";
+  var plugin_version = "2026.8.15.2";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -322,7 +323,7 @@ text-size: 16px;}",
       );
       vgap.plugins["plManagerPlugin"].addCss(
         "#MPPLBMTable { \
-width: 400px; \
+width: 520px; \
 overflow: hidden; \
     display: inline-block; \
     white-space: nowrap;}",
@@ -419,6 +420,27 @@ box-shadow: 2px 2px 2px #777777}",
         ".surveyOnly { \
             display: inherit; \
         }",
+      );
+
+      vgap.plugins["plManagerPlugin"].addCss(
+        ".PMActionBtn { \
+background: #2a2a2a; \
+color: #ffffff; \
+border: 1px solid #777777; \
+border-radius: 4px; \
+padding: 6px 12px; \
+margin: 0 4px 4px 0; \
+cursor: pointer; \
+font-weight: bold; \
+font-size: 12px; \
+line-height: 1.3; \
+white-space: nowrap;} \
+.PMActionBtn:hover { \
+background: #444444; \
+border-color: #aaaaaa; \
+color: #ffd54a;} \
+.PMActionBtn:active { \
+background: #1a1a1a;}",
       );
       // width: 52px
       // right: 6px
@@ -2128,7 +2150,7 @@ box-shadow: 2px 2px 2px #777777}",
       bmhtml +=
         "<tr><td>Build Method:</td><td>Colonist Tax:</td><td>Native Tax:</td>";
       bmhtml +=
-        "<td rowspan = 2 align=center style='width: 45px; cursor:pointer;'><img class='BuildButton' align=center width=45px height=40px src='https://planets.nu/img/icons/blacksquares/planets.png'/></td></tr>";
+        "<td rowspan = 2 align=center style='vertical-align:middle;'><button type='button' class='PMActionBtn BuildButton' title='Apply the selected build and tax methods to this planet'>Build Planet</button></td></tr>";
       bmhtml +=
         "<tr><td><div> \
 <select class='MPBMSelect' data-plid='" +
@@ -14927,7 +14949,7 @@ box-shadow: 2px 2px 2px #777777}",
           plugin_version +
           "</h1></td>";
         html +=
-          "<td align=center style='width: 100px; cursor:pointer;'><img class='BuildButton' align=center width=90px height=80px src='https://planets.nu/img/icons/blacksquares/planets.png'/><img class='AnalyseButton' align='center' width='90px' height='80px' src='https://planets.nu/img/icons/blacksquares/planets.png'></td></tr>";
+          "<td align=right style='vertical-align:middle; white-space:nowrap;'><button type='button' class='PMActionBtn BuildButton' title='Apply selected build and tax methods to the filtered planet list'>Build Planets</button><button type='button' class='PMActionBtn AnalyseButton' title='Analyse the filtered planet list and write planet tags'>Analyse Planets</button></td></tr>";
         html +=
           "<tr><td class=PLBuildStatus>" +
           vgap.plugins["plManagerPlugin"].buildstatustext +
