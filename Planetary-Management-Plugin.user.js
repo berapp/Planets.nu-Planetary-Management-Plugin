@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.15.4
+// @version       2026.8.15.5
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,9 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.15.5  Build Method Section Builder now reads the selected structure
+//                             type and ratio from the live radio state, so Add To Method
+//                             appends the chosen section instead of always using factories.
 // @history       2026.8.15.4  Refresh PLBuildStatus after each planet during analyse and build
 // @history       2026.8.15.3  Rename Planetary Score (pmscore2) to Ground Resource Score (grscore)
 // @history       2026.8.15.2  Replace analyse/build image icons with labeled text buttons
@@ -70,7 +73,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.15.4";
+  var plugin_version = "2026.8.15.5";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -17363,7 +17366,7 @@ Convert Supplies to MC:<br /> \
 <input type='radio' value='5' name='wizratrad' id='BMWizRatRad5' />5:1 \
 <input type='radio' value='10' name='wizratrad' id='BMWizRatRad10' />10:1 \
 </div><br /> \
-<button id='BMWizAddBtn'>Add To Method</button></fieldset>";
+<button type='button' id='BMWizAddBtn'>Add To Method</button></fieldset>";
 
         wizhtml +=
           "<tr><td colspan = 2><div id='BMWizMethStatusText'></div></td></tr>";
@@ -17578,6 +17581,7 @@ Convert Supplies to MC:<br /> \
                   mcode += "-" + splitarray[i];
               }
               plg.bmwizcode = mcode;
+              plg.bmwiztext = plg.getBuildCodeText(plg.bmwizcode);
               $("#BMWizCode").replaceWith(
                 "<td align='center' colspan = 2 id='BMWizCode'><h3><b>" +
                   plg.bmwizcode +
@@ -17638,28 +17642,26 @@ Convert Supplies to MC:<br /> \
           if (plg.bmwizcode == "") {
             plg.bmwizcode = $("input[name='wizburn']:checked").val() || "y";
           }
-          var mcode = "";
+          var sectionType = $("input[name='wizrad']:checked").val();
+          var amount1 = $("#BMWizAmtTxt1").val();
+          var amount2 = $("#BMWizAmtTxt2").val();
+          var ratio = $("input[name='wizratrad']:checked").val();
+          var mcode = plg.composeBuildSection(
+            sectionType,
+            amount1,
+            amount2,
+            ratio,
+          );
 
-          if ($("#BMWizFRad").attr("checked")) {
-            mcode += "-f-" + $("#BMWizAmtTxt1").val();
-          }
-          if ($("#BMWizMRad").attr("checked")) {
-            mcode += "-m-" + $("#BMWizAmtTxt1").val();
-          }
-          if ($("#BMWizDRad").attr("checked")) {
-            mcode += "-d-" + $("#BMWizAmtTxt1").val();
-          }
-          if ($("#BMWizRFMRad").attr("checked")) {
-            mcode += "-rfm-" + $("#BMWizAmtTxt1").val();
-            mcode += "-" + $("#BMWizAmtTxt2").val();
-            if ($("#BMWizRatRad2").attr("checked")) mcode += "-2";
-            if ($("#BMWizRatRad3").attr("checked")) mcode += "-3";
-            if ($("#BMWizRatRad5").attr("checked")) mcode += "-5";
-            if ($("#BMWizRatRad10").attr("checked")) mcode += "-10";
-            console.log("Attempting RFM Add: mcode = " + mcode);
-          }
+          if (debug)
+            console.log(
+              "Attempting section add: type=" +
+                sectionType +
+                " mcode=" +
+                mcode,
+            );
 
-          if (plg.checkBuildCode(plg.bmwizcode + mcode)) {
+          if (mcode != "" && plg.checkBuildCode(plg.bmwizcode + mcode)) {
             // The code is good
             plg.bmwizcode += mcode;
             plg.bmwiztext = plg.getBuildCodeText(plg.bmwizcode);
@@ -20936,6 +20938,31 @@ Parameters: <br />\
     isBuildAmount: function (value) {
       var plg = vgap.plugins["plManagerPlugin"];
       return plg.isInteger(value) || plg.isMaxKeyword(value);
+    },
+
+    normalizeBuildAmountInput: function (value) {
+      if (value == null) return null;
+      var v = String(value).replace(/^\s+|\s+$/g, "");
+      if (vgap.plugins["plManagerPlugin"].isMaxKeyword(v)) return "max";
+      if (vgap.plugins["plManagerPlugin"].isInteger(v)) return v;
+      return null;
+    },
+
+    composeBuildSection: function (sectionType, amount1, amount2, ratio) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var type = sectionType == null ? "" : String(sectionType);
+      var amt1 = plg.normalizeBuildAmountInput(amount1);
+      if (type == "f" || type == "m" || type == "d") {
+        if (amt1 == null) return "";
+        return "-" + type + "-" + amt1;
+      }
+      if (type == "rfm") {
+        var amt2 = plg.normalizeBuildAmountInput(amount2);
+        var rat = ratio == null ? "" : String(ratio);
+        if (amt1 == null || amt2 == null || !plg.isInteger(rat)) return "";
+        return "-rfm-" + amt1 + "-" + amt2 + "-" + rat;
+      }
+      return "";
     },
 
     formatBuildAmount: function (value) {
