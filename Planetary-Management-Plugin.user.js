@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.15.2
+// @version       2026.8.15.3
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,7 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.15.3  Rename Planetary Score (pmscore2) to Ground Resource Score (grscore)
 // @history       2026.8.15.2  Replace analyse/build image icons with labeled text buttons
 // @history       2026.8.15.1  Build method amounts accept the keyword max, using the
 //                             planet's current maximum allowed structures
@@ -49,7 +50,7 @@
 //                            when the no-supplies (unlimited supplies) setting is on
 // @history       2026.8.14.3 Hide neutronium in overlays, resource tables, and predictions
 //                            when the unlimited fuel setting is on
-// @history       2026.8.14  Skip neutronium when calculating pmscore2 in unlimited-fuel games
+// @history       2026.8.14  Skip neutronium when calculating grscore in unlimited-fuel games
 // @history       2026.8.13  Bulk build now operates on the filtered planet list instead of
 //                           the first N planets from the default (unfiltered) list
 // @history       2026.8.14.2 Safe supply-to-MC convert mode (s): convert supplies for building
@@ -68,7 +69,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.15.2";
+  var plugin_version = "2026.8.15.3";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -15503,12 +15504,12 @@ background: #1a1a1a;}",
               "</td></tr>";
 
 
-              // Planetary Score2
+              // Ground Resource Score
               reshtml +=
-                "<tr><td class='ResName' align='right'>Planetary Score</td>";
+                "<tr><td class='ResName' align='right'>Ground Resource Score</td>";
               reshtml +=
                 "<td class='ResSfc' align='right'>" +
-                planet.pmscore2 +
+                planet.grscore +
                 "&nbsp;" +
                 "</td></tr>";
             reshtml += "</table>";
@@ -20705,30 +20706,31 @@ Parameters: <br />\
         // There are still more planets to do
 
 
-        planet.pmscore2 = 0;
+        planet.grscore = 0;
         if (!plg.unlimitedFuel()) {
-          planet.pmscore2 += planet.groundneutronium * (planet.densityneutronium / 100);
+          planet.grscore += planet.groundneutronium * (planet.densityneutronium / 100);
         }
-        planet.pmscore2 += planet.groundduranium * (planet.densityduranium / 100);
-        planet.pmscore2 += planet.groundtritanium * (planet.densitytritanium / 100);
-        planet.pmscore2 += planet.groundmolybdenum * (planet.densitymolybdenum / 100);
+        planet.grscore += planet.groundduranium * (planet.densityduranium / 100);
+        planet.grscore += planet.groundtritanium * (planet.densitytritanium / 100);
+        planet.grscore += planet.groundmolybdenum * (planet.densitymolybdenum / 100);
 
 
-        planet.pmscore2 = Math.round(planet.pmscore2);
+        planet.grscore = Math.round(planet.grscore);
         if (!planet.note) planet.note = vgap.addNote(planet.id, 1);
         var noteBody = planet.note["body"] || "";
-        var pmscore2Value = "PMSCORE2=" + planet.pmscore2.toString();
-        console.log("Analysing planet " + planet.id + " and pmscore2 " + planet.pmscore2);
+        var grscoreValue = "GRSCORE=" + planet.grscore.toString();
+        console.log("Analysing planet " + planet.id + " and grscore " + planet.grscore);
 
-        if (/(^|\n)PMSCORE2=\d+/.test(noteBody)) {
+        if (/(^|\n)(GRSCORE|PMSCORE2)=\d+/.test(noteBody)) {
           noteBody = noteBody.replace(
-            /(^|\n)PMSCORE2=\d+/,
+            /(^|\n)(GRSCORE|PMSCORE2)=\d+/,
             function (match, prefix) {
-              return prefix + pmscore2Value;
+              return prefix + grscoreValue;
             },
           );
+          noteBody = noteBody.replace(/(^|\n)PMSCORE2=\d+/, "");
         } else {
-          noteBody = noteBody ? noteBody + "\n" + pmscore2Value : pmscore2Value;
+          noteBody = noteBody ? noteBody + "\n" + grscoreValue : grscoreValue;
         }
         planet.note["body"] = noteBody;
         plg.planetPredictor(planet, 0, 49);
