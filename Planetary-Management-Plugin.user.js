@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.15.5
+// @version       2026.8.16.1
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,11 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.16.1  Export and import planetary construction methods
+//                             as JSON from the Build Methods screen
+// @history       2026.8.16    Planetary Construction Method Wizard uses select elements
+//                             instead of radio buttons for convert mode, structure type,
+//                             and factory/mine ratio
 // @history       2026.8.15.5  Build Method Section Builder now reads the selected structure
 //                             type and ratio from the live radio state, so Add To Method
 //                             appends the chosen section instead of always using factories.
@@ -73,7 +78,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.15.5";
+  var plugin_version = "2026.8.16.1";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -268,6 +273,13 @@ padding: 20px;}",
       );
 
       vgap.plugins["plManagerPlugin"].addCss(
+        "#BMWizBurn, #BMWizType, #BMWizRatioSel { \
+min-width: 220px; \
+padding: 4px; \
+border-radius: 5px;}",
+      );
+
+      vgap.plugins["plManagerPlugin"].addCss(
         "#BMLegend { \
 border: 1px solid #dcdcdc; \
 border-radius: 10px; \
@@ -360,6 +372,34 @@ color: #00FF00;}",
       vgap.plugins["plManagerPlugin"].addCss(
         "#BMSelTable td{ \
 padding-left: 20px;}",
+      );
+
+      vgap.plugins["plManagerPlugin"].addCss(
+        "#BMXferFieldset { \
+border: 1px solid; \
+border-radius: 10px; \
+padding: 16px; \
+margin-top: 12px;}",
+      );
+
+      vgap.plugins["plManagerPlugin"].addCss(
+        "#BMXferStatus { \
+font-weight: bold; \
+margin-bottom: 8px;}",
+      );
+
+      vgap.plugins["plManagerPlugin"].addCss(
+        "#BMXferFieldset button { \
+margin-right: 8px; \
+margin-bottom: 6px;}",
+      );
+
+      vgap.plugins["plManagerPlugin"].addCss(
+        "#BMImportPaste { \
+width: 100%; \
+max-width: 640px; \
+min-height: 80px; \
+border-radius: 5px;}",
       );
 
       // New Map CSS Stuff
@@ -2315,6 +2355,7 @@ background: #1a1a1a;}",
     notetype: -174481,
     bmwizcode: "",
     bmwiztext: "",
+    bmxferstatus: "",
     selTaxModel: "",
     pplanet: "",
     predictarray: [],
@@ -14955,7 +14996,7 @@ background: #1a1a1a;}",
           plugin_version +
           "</h1></td>";
         html +=
-          "<td align=right style='vertical-align:middle; white-space:nowrap;'><button type='button' class='PMActionBtn BuildButton' title='Apply selected build and tax methods to the filtered planet list'>Build Planets</button><button type='button' class='PMActionBtn AnalyseButton' title='Analyse the filtered planet list and write planet tags'>Analyse Planets</button></td></tr>";
+          "<td align=right style='vertical-align:middle; white-space:nowrap;'><button type='button' class='PMActionBtn AnalyseButton' title='Analyse the filtered planet list and write planet tags'>Analyse Planets</button><button type='button' class='PMActionBtn BuildButton' title='Apply selected build and tax methods to the filtered planet list'>Build Planets</button></td></tr>";
         html +=
           "<tr><td class=PLBuildStatus>" +
           vgap.plugins["plManagerPlugin"].buildstatustext +
@@ -17193,6 +17234,7 @@ selecting different methods and looking at the Planet Predictor, you can see how
 available - these are the default methods, and any methods you have created for this game.  If you click on a method, it will display text explaining how the method \
 works to you.  You can also remove a method here, by selecting the method you'd like to remove and clicking 'Remove Build Method'.  The method will be removed \
 immediately, and any planets that you had set to use that build method will revert to manual and will have to be reassigned.</p> \
+<p>You can export your methods as a JSON file, or paste that JSON back in on another game or computer.  Export All writes every method; Export Selected writes only the method highlighted in the list.  Import adds methods that do not already exist.  Check 'Overwrite methods that have the same name' to replace the build code of an existing method in place; planet assignments are kept.  Import never removes methods or changes their order.</p> \
 <p>To create planetary structure construction methods, you can either use the wizard or the direct entry box.  To use the wizard, you give the method a name, and \
 choose whether supplies may be converted to megacredits: Yes (always), No (never), or Safe (convert only supplies not needed to keep overpopulated colonists alive on harsh climates).</p> \
 <p>Next, select one of the images corresponding to what you want to build.  You can build factories, mines, defense posts, or a combination of factories and mines at a \
@@ -17276,7 +17318,7 @@ all custom build and tax methods.<br />";
         var pmheaderhtml =
           "<table><tr><td><h1>Planetary Construction Method Manager</h1><br /></td></tr>";
         pmheaderhtml +=
-          "<tr><td>Here you may create or remove building construction methods.";
+          "<tr><td>Here you may create, remove, export, or import building construction methods.";
         pmheaderhtml += "</td></tr></table>";
 
         // Construct the method review pane
@@ -17300,6 +17342,25 @@ all custom build and tax methods.<br />";
         mrevhtml +=
           "<tr><td><button id='BMRemoveMethodBtn'>Remove Build Method</button></td></tr>";
         mrevhtml += "</table>";
+
+        var xferstatus = plg.bmxferstatus || "";
+        plg.bmxferstatus = "";
+        var xferhtml =
+          "<fieldset id='BMXferFieldset'><legend>Export / Import Build Methods</legend> \
+<div id='BMXferStatus'>" +
+          xferstatus +
+          "</div> \
+<button type='button' id='BMExportAllBtn'>Export All Methods</button> \
+<button type='button' id='BMExportSelectedBtn'>Export Selected Method</button> \
+<button type='button' id='BMImportFileBtn'>Import from File</button> \
+<input type='file' id='BMImportFile' accept='.json,application/json,text/plain' style='display:none' /> \
+<br /> \
+<label><input type='checkbox' id='BMImportOverwrite' /> Overwrite methods that have the same name</label> \
+<br /><br /> \
+<label>Or paste exported JSON here:<br /> \
+<textarea id='BMImportPaste'></textarea></label><br /> \
+<button type='button' id='BMImportPasteBtn'>Import Pasted JSON</button> \
+</fieldset>";
 
         // Construct Direct Entry Method
         var dehtml =
@@ -17335,24 +17396,24 @@ all custom build and tax methods.<br />";
 Method Name:<br /> \
 <input id='BMWizName' name='bmnamebox' maxlength='16' type='text'></label> \
 <button id='BMWizAddMethodBtn'>Create Build Method</button><br /><br /> \
-Convert Supplies to MC:<br /> \
-<input type='radio' name='wizburn' id='BMWizBurnYes' value='y' checked /> Yes (always convert)<br /> \
-<input type='radio' name='wizburn' id='BMWizBurnNo' value='n' /> No (never convert)<br /> \
-<input type='radio' name='wizburn' id='BMWizBurnSafe' value='s' /> Safe (keep climate reserves)<br /> \
+<label>Convert Supplies to MC:<br /> \
+<select name='wizburn' id='BMWizBurn'> \
+<option value='y' selected>Yes (always convert)</option> \
+<option value='n'>No (never convert)</option> \
+<option value='s'>Safe (keep climate reserves)</option> \
+</select></label> \
 </fieldset>";
 
         var wizbtnhtml =
           "<fieldset id='BMWizFieldset'><legend>Build Method Section Builder</legend> \
-<input type='radio' value='f' name='wizrad' id='BMWizFRad' checked /> \
-<img src='https://planets.nu/img/icons/factory.png' height='25' width='25'></img> \
-<input type='radio' value='m' name='wizrad' id='BMWizMRad' /> \
-<img src='https://planets.nu/img/icons/mine.png' height='25' width='25'></img> \
-<input type='radio' value='d' name='wizrad' id='BMWizDRad' /> \
-<img src='https://planets.nu/img/icons/defense.png' height='25' width='25'></img> \
-<input type='radio' value='rfm' name='wizrad' id='BMWizRFMRad' /> \
-<img src='https://planets.nu/img/icons/factory.png' height='25' width='25'></img>+ \
-<img src='https://planets.nu/img/icons/mine.png' height='25' width='25'></img> \
-<br /> \
+<label>Structure Type:<br /> \
+<select name='wizrad' id='BMWizType'> \
+<option value='f' selected>Factories</option> \
+<option value='m'>Mines</option> \
+<option value='d'>Defense</option> \
+<option value='rfm'>Factories + Mines</option> \
+</select></label> \
+<br /><br /> \
 <div id='BMWizAmt1'> \
 <label>Amount (number or max): \
 <input type='text' id='BMWizAmtTxt1'></label></div> \
@@ -17360,11 +17421,13 @@ Convert Supplies to MC:<br /> \
 <label>2nd Amount (number or max): \
 <input type='text' id='BMWizAmtTxt2'></label></div> \
 <div id='BMWizRatio' style='display: none;'> \
-<label>Ratio: </label>\
-<input type='radio' value='2' name='wizratrad' id='BMWizRatRad2' checked/>2:1 \
-<input type='radio' value='3' name='wizratrad' id='BMWizRatRad3' />3:1 \
-<input type='radio' value='5' name='wizratrad' id='BMWizRatRad5' />5:1 \
-<input type='radio' value='10' name='wizratrad' id='BMWizRatRad10' />10:1 \
+<label>Ratio: \
+<select name='wizratrad' id='BMWizRatioSel'> \
+<option value='2' selected>2:1</option> \
+<option value='3'>3:1</option> \
+<option value='5'>5:1</option> \
+<option value='10'>10:1</option> \
+</select></label> \
 </div><br /> \
 <button type='button' id='BMWizAddBtn'>Add To Method</button></fieldset>";
 
@@ -17394,6 +17457,9 @@ Convert Supplies to MC:<br /> \
         html += "</td></tr>";
         html += "<tr><td colspan = 2>";
         html += mrevhtml;
+        html += "</td></tr>";
+        html += "<tr><td colspan = 2>";
+        html += xferhtml;
         html += "</td></tr>";
 
         html +=
@@ -17498,6 +17564,43 @@ Convert Supplies to MC:<br /> \
           }
         });
 
+        $("#BMExportAllBtn").click(function () {
+          plg.exportBuildMethods(false);
+        });
+
+        $("#BMExportSelectedBtn").click(function () {
+          plg.exportBuildMethods(true);
+        });
+
+        $("#BMImportFileBtn").click(function () {
+          $("#BMImportFile").click();
+        });
+
+        $("#BMImportFile").change(function () {
+          var file = this.files && this.files[0];
+          this.value = "";
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function (evt) {
+            var text = evt && evt.target ? evt.target.result : "";
+            plg.importBuildMethodsFromText(
+              text,
+              $("#BMImportOverwrite").is(":checked"),
+            );
+          };
+          reader.onerror = function () {
+            $("#BMXferStatus").text("Could not read the selected file.");
+          };
+          reader.readAsText(file);
+        });
+
+        $("#BMImportPasteBtn").click(function () {
+          plg.importBuildMethodsFromText(
+            $("#BMImportPaste").val(),
+            $("#BMImportOverwrite").is(":checked"),
+          );
+        });
+
         $("#BMRemoveMethodBtn").click(function () {
           var bmind = $("#BMSelect").val();
           // Remove the method
@@ -17540,24 +17643,14 @@ Convert Supplies to MC:<br /> \
           }
         });
 
-        $("#BMWizFRad").click(function () {
-          $("#BMWizAmt2").hide();
-          $("#BMWizRatio").hide();
-        });
-
-        $("#BMWizMRad").click(function () {
-          $("#BMWizAmt2").hide();
-          $("#BMWizRatio").hide();
-        });
-
-        $("#BMWizDRad").click(function () {
-          $("#BMWizAmt2").hide();
-          $("#BMWizRatio").hide();
-        });
-
-        $("#BMWizRFMRad").click(function () {
-          $("#BMWizAmt2").show();
-          $("#BMWizRatio").show();
+        $("#BMWizType").change(function () {
+          if ($("#BMWizType").val() == "rfm") {
+            $("#BMWizAmt2").show();
+            $("#BMWizRatio").show();
+          } else {
+            $("#BMWizAmt2").hide();
+            $("#BMWizRatio").hide();
+          }
         });
 
         $("#BMWizRemoveBtn").click(function () {
@@ -17618,10 +17711,10 @@ Convert Supplies to MC:<br /> \
           );
         });
 
-        $("input[name='wizburn']").change(function () {
+        $("#BMWizBurn").change(function () {
           if (debug) console.log("BMWIZBURN MODE CHANGED");
           if (plg.bmwizcode != "") {
-            var mode = $("input[name='wizburn']:checked").val() || "y";
+            var mode = $("#BMWizBurn").val() || "y";
             plg.bmwizcode = mode + plg.bmwizcode.substring(1);
 
             plg.bmwiztext = plg.getBuildCodeText(plg.bmwizcode);
@@ -17640,12 +17733,12 @@ Convert Supplies to MC:<br /> \
 
         $("#BMWizAddBtn").click(function () {
           if (plg.bmwizcode == "") {
-            plg.bmwizcode = $("input[name='wizburn']:checked").val() || "y";
+            plg.bmwizcode = $("#BMWizBurn").val() || "y";
           }
-          var sectionType = $("input[name='wizrad']:checked").val();
+          var sectionType = $("#BMWizType").val();
           var amount1 = $("#BMWizAmtTxt1").val();
           var amount2 = $("#BMWizAmtTxt2").val();
-          var ratio = $("input[name='wizratrad']:checked").val();
+          var ratio = $("#BMWizRatioSel").val();
           var mcode = plg.composeBuildSection(
             sectionType,
             amount1,
@@ -18138,105 +18231,29 @@ Parameters: <br />\
       var plg = vgap.plugins["plManagerPlugin"];
 
       plg.buildmethods = [];
-      plg.buildmethods[0] = ["Y Build 0", "y-f-14-m-19-rfm-500-0-2-d-100"];
-      plg.buildmethods[1] = ["Y Build 100", "y-f-14-m-19-rfm-500-100-2-d-100"];
-      plg.buildmethods[2] = ["Y Build 200", "y-f-14-m-19-rfm-500-200-2-d-100"];
-      plg.buildmethods[3] = [
-        "Y Build 0",
-        "y-f-14-m-19-d-16-rfm-500-0-2-d-100",
-      ];
-      plg.buildmethods[4] = [
-        "Y Build 100",
-        "y-f-14-m-19-d-16-rfm-500-100-2-d-100",
-      ];
-      plg.buildmethods[5] = [
-        "Y Build 200",
-        "y-f-14-m-19-d-16-rfm-500-200-2-d-100",
-      ];
-      plg.buildmethods[6] = ["Y Build 2:1", "y-rfm-500-500-2"];
-      plg.buildmethods[7] = ["Y Defense", "y-d-500"];
-      plg.buildmethods[8] = [
-        "N Build 0",
-        "n-f-14-m-19-d-16-rfm-500-0-2-d-100",
-      ];
-      plg.buildmethods[9] = [
-        "N Build 100",
-        "n-f-14-m-19-d-16-rfm-500-100-2-d-100",
-      ];
-      plg.buildmethods[10] = [
-        "N Build 200",
-        "n-f-14-m-19-d-16-rfm-500-200-2-d-100",
-      ];
-      plg.buildmethods[11] = ["N Build 0", "n-f-14-m-19-rfm-500-0-2-d-100"];
-      plg.buildmethods[12] = ["N Build 100", "n-f-14-m-19-rfm-500-100-2-d-100"];
-      plg.buildmethods[13] = ["N Build 200", "n-f-14-m-19-rfm-500-200-2-d-100"];
-      plg.buildmethods[14] = ["Y Build 500", "y-f-14-m-19-rfm-500-500-2-d-100"];
-      plg.buildmethods[15] = ["N Build 500", "n-f-14-m-19-rfm-500-500-2-d-100"];
-      plg.buildmethods[16] = [
-        "Y Build 200 3",
-        "y-f-14-m-19-rfm-500-200-3-d-100",
-      ];
-      plg.buildmethods[17] = [
-        "N Build 200 3",
-        "n-f-14-m-19-rfm-500-200-3-d-100",
-      ];
-      plg.buildmethods[18] = [
-        "Y Build 200 3",
-        "y-f-14-m-19-d-16-rfm-500-200-3-d-100",
-      ];
-      plg.buildmethods[19] = [
-        "N Build 200 3",
-        "n-f-14-m-19-d-16-rfm-500-200-3-d-100",
-      ];
-      // S = convert supplies to MC, but reserve climate-support supplies
-      plg.buildmethods[20] = [
-        "S Build 0",
-        "s-f-14-m-19-rfm-500-0-2-d-100",
-      ];
-      plg.buildmethods[21] = [
-        "S Build 100",
-        "s-f-14-m-19-rfm-500-100-2-d-100",
-      ];
-      plg.buildmethods[22] = [
-        "S Build 200",
-        "s-f-14-m-19-rfm-500-200-2-d-100",
-      ];
-      plg.buildmethods[23] = [
-        "S Build 0",
-        "s-f-14-m-19-d-16-rfm-500-0-2-d-100",
-      ];
-      plg.buildmethods[24] = [
-        "S Build 100",
-        "s-f-14-m-19-d-16-rfm-500-100-2-d-100",
-      ];
-      plg.buildmethods[25] = [
-        "S Build 200",
-        "s-f-14-m-19-d-16-rfm-500-200-2-d-100",
-      ];
-      plg.buildmethods[26] = [
-        "S Build 500",
-        "s-f-14-m-19-rfm-500-500-2-d-100",
-      ];
-      plg.buildmethods[27] = [
-        "S Build 200 3",
-        "s-f-14-m-19-d-16-rfm-500-200-3-d-100",
-      ];
-      plg.buildmethods[28] = [
-        "S Build 250 3",
-        "s-f-14-m-19-d-16-rfm-500-250-3-d-100",
-      ];
-      plg.buildmethods[29] = [
-        "S Build 250 2",
-        "s-f-14-m-19-d-16-rfm-500-250-2-d-100",
-      ];
-      plg.buildmethods[30] = [
-        "S Build 100 3",
-        "s-f-14-m-19-d-16-rfm-500-100-3-d-100",
-      ];
-      plg.buildmethods[31] = [
-        "S Build 100 2",
-        "s-f-14-m-19-d-16-rfm-500-100-2-d-100",
-      ];
+      plg.buildmethods[0] = ["Y Build 0 2:1", "y-f-14-m-19-rfm-500-0-2-d-100"];
+      plg.buildmethods[1] = ["Y Build 100 2:1", "y-f-14-m-19-rfm-500-100-2-d-100"];
+      plg.buildmethods[2] = ["Y Build 150 2:1", "y-f-14-m-19-rfm-500-150-2-d-100"];
+      plg.buildmethods[3] = ["Y Build 200 2:1", "y-f-14-m-19-rfm-500-200-2-d-100"];
+      plg.buildmethods[4] = ["Y Build 250 2:1", "y-f-14-m-19-rfm-500-250-2-d-100"];
+
+      plg.buildmethods[5] = ["S Build 0 2:1", "s-f-14-m-19-rfm-500-0-2-d-100"];
+      plg.buildmethods[6] = ["S Build 100 2:1", "s-f-14-m-19-rfm-500-100-2-d-100"];
+      plg.buildmethods[7] = ["S Build 150 2:1", "s-f-14-m-19-rfm-500-150-2-d-100"];
+      plg.buildmethods[8] = ["S Build 200 2:1", "s-f-14-m-19-rfm-500-200-2-d-100"];
+      plg.buildmethods[9] = ["S Build 250 2:1", "s-f-14-m-19-rfm-500-250-2-d-100"];
+
+      plg.buildmethods[10] = ["Y Build 0 3:1", "y-f-14-m-19-rfm-500-0-3-d-100"];
+      plg.buildmethods[11] = ["Y Build 100 3:1", "y-f-14-m-19-rfm-500-100-3-d-100"];
+      plg.buildmethods[12] = ["Y Build 150 3:1", "y-f-14-m-19-rfm-500-150-3-d-100"];
+      plg.buildmethods[13] = ["Y Build 200 3:1", "y-f-14-m-19-rfm-500-200-3-d-100"];
+      plg.buildmethods[14] = ["Y Build 250 3:1", "y-f-14-m-19-rfm-500-250-3-d-100"];
+
+      plg.buildmethods[15] = ["S Build 0 3:1", "s-f-14-m-19-rfm-500-0-3-d-100"];
+      plg.buildmethods[16] = ["S Build 100 3:1", "s-f-14-m-19-rfm-500-100-3-d-100"];
+      plg.buildmethods[17] = ["S Build 150 3:1", "s-f-14-m-19-rfm-500-150-3-d-100"];
+      plg.buildmethods[18] = ["S Build 200 3:1", "s-f-14-m-19-rfm-500-200-3-d-100"];
+      plg.buildmethods[19] = ["S Build 250 3:1", "s-f-14-m-19-rfm-500-250-3-d-100"];
     },
 
     resetTaxMethods: function () {
@@ -20817,8 +20834,274 @@ Parameters: <br />\
     /*
      * This function checks a manually entered code to see if it is valid.
      */
+    buildMethodsExportKind: "planets.nu-pm-build-methods",
+
+    safeExportFileName: function (base) {
+      var name = String(base || "pm-build-methods").replace(
+        /[^A-Za-z0-9_-]+/g,
+        "-",
+      );
+      name = name.replace(/^-+|-+$/g, "");
+      if (name === "") name = "pm-build-methods";
+      return name + ".json";
+    },
+
+    downloadTextFile: function (filename, text) {
+      var blob = new Blob([text], { type: "application/json;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(function () {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    },
+
+    buildMethodsExportPayload: function (methods) {
+      var list = [];
+      for (var i = 0; i < methods.length; i++) {
+        list.push({ name: methods[i][0], code: methods[i][1] });
+      }
+      return {
+        kind: vgap.plugins["plManagerPlugin"].buildMethodsExportKind,
+        pluginVersion: plugin_version,
+        methods: list,
+      };
+    },
+
+    setBuildMethodsXferStatus: function (message) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      plg.bmxferstatus = message || "";
+      if ($("#BMXferStatus").length) $("#BMXferStatus").text(plg.bmxferstatus);
+    },
+
+    refreshBuildMethodSelect: function () {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var sel = $("#BMSelect");
+      if (!sel.length) return;
+      var current = sel.val();
+      sel.empty();
+      for (var i = 0; i < plg.buildmethods.length; i++) {
+        sel.append(
+          $("<option></option>")
+            .attr("value", i)
+            .text(plg.buildmethods[i][0]),
+        );
+      }
+      if (current != null && current !== "" && sel.find("option").length) {
+        sel.val(current);
+        sel.change();
+      }
+    },
+
+    exportBuildMethods: function (selectedOnly) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var methods = [];
+      var filename = "pm-build-methods";
+
+      if (selectedOnly) {
+        var bmind = $("#BMSelect").val();
+        if (bmind == null || bmind === "") {
+          plg.setBuildMethodsXferStatus("Select a build method to export.");
+          return;
+        }
+        bmind = parseInt(bmind, 10);
+        if (
+          isNaN(bmind) ||
+          bmind < 0 ||
+          bmind >= plg.buildmethods.length ||
+          !plg.buildmethods[bmind]
+        ) {
+          plg.setBuildMethodsXferStatus("Select a build method to export.");
+          return;
+        }
+        methods.push(plg.buildmethods[bmind]);
+        filename = "pm-build-method-" + plg.buildmethods[bmind][0];
+      } else {
+        if (!plg.buildmethods || plg.buildmethods.length === 0) {
+          plg.setBuildMethodsXferStatus("There are no methods to export.");
+          return;
+        }
+        methods = plg.buildmethods.slice(0);
+      }
+
+      var payload = plg.buildMethodsExportPayload(methods);
+      plg.downloadTextFile(
+        plg.safeExportFileName(filename),
+        JSON.stringify(payload, null, 2),
+      );
+      plg.setBuildMethodsXferStatus(
+        "Exported " +
+          methods.length +
+          (methods.length === 1 ? " method." : " methods."),
+      );
+    },
+
+    parseImportedBuildMethods: function (text) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      if (text == null || String(text).replace(/^\s+|\s+$/g, "") === "") {
+        return {
+          ok: false,
+          error: "No data to import.",
+          methods: [],
+        };
+      }
+
+      var raw;
+      try {
+        raw = JSON.parse(String(text));
+      } catch (e) {
+        return {
+          ok: false,
+          error: "Import is not valid JSON.",
+          methods: [],
+        };
+      }
+
+      if (
+        raw &&
+        !Array.isArray(raw) &&
+        raw.kind != null &&
+        raw.kind !== plg.buildMethodsExportKind
+      ) {
+        return {
+          ok: false,
+          error: "This file is not a build methods export.",
+          methods: [],
+        };
+      }
+
+      var list = null;
+      if (Array.isArray(raw)) list = raw;
+      else if (raw && Array.isArray(raw.methods)) list = raw.methods;
+      else if (raw && Array.isArray(raw.buildmethods)) list = raw.buildmethods;
+      else if (raw && raw.name != null && (raw.code != null || raw.buildcode != null))
+        list = [raw];
+      else {
+        return {
+          ok: false,
+          error: "JSON does not contain a methods list.",
+          methods: [],
+        };
+      }
+
+      var methods = [];
+      for (var i = 0; i < list.length; i++) {
+        var item = list[i];
+        var name = null;
+        var code = null;
+        if (Array.isArray(item) && item.length >= 2) {
+          name = item[0];
+          code = item[1];
+        } else if (item && typeof item === "object") {
+          name = item.name;
+          code = item.code != null ? item.code : item.buildcode;
+        }
+        if (name == null || code == null) continue;
+        name = String(name).replace(/^\s+|\s+$/g, "");
+        code = String(code).replace(/^\s+|\s+$/g, "");
+        if (name === "" || code === "") continue;
+        methods.push({ name: name, code: code });
+      }
+
+      if (methods.length === 0) {
+        return {
+          ok: false,
+          error: "No build methods found in the import.",
+          methods: [],
+        };
+      }
+
+      return { ok: true, error: "", methods: methods };
+    },
+
+    applyImportedBuildMethods: function (methods, overwrite) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var added = 0;
+      var updated = 0;
+      var skipped = 0;
+      var invalid = 0;
+
+      for (var i = 0; i < methods.length; i++) {
+        var name = methods[i].name;
+        var code = methods[i].code;
+        if (!plg.checkBuildCode(code)) {
+          invalid++;
+          continue;
+        }
+
+        var existing = -1;
+        for (var j = 0; j < plg.buildmethods.length; j++) {
+          if (plg.buildmethods[j][0] == name) {
+            existing = j;
+            break;
+          }
+        }
+
+        if (existing >= 0) {
+          if (overwrite) {
+            plg.buildmethods[existing][1] = code;
+            updated++;
+          } else {
+            skipped++;
+          }
+        } else {
+          plg.buildmethods.push([name, code]);
+          added++;
+        }
+      }
+
+      if (added > 0 || updated > 0) {
+        plg.saveObjectAsNote(4, plg.notetype, [
+          plugin_version,
+          plg.buildmethods,
+        ]);
+      }
+
+      return {
+        added: added,
+        updated: updated,
+        skipped: skipped,
+        invalid: invalid,
+      };
+    },
+
+    formatBuildMethodsImportStatus: function (result) {
+      var parts = [];
+      if (result.added) parts.push(result.added + " added");
+      if (result.updated) parts.push(result.updated + " updated");
+      if (result.skipped)
+        parts.push(result.skipped + " skipped (name already exists)");
+      if (result.invalid) parts.push(result.invalid + " invalid");
+      if (parts.length === 0) return "No methods imported.";
+      return "Import complete: " + parts.join(", ") + ".";
+    },
+
+    importBuildMethodsFromText: function (text, overwrite) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var parsed = plg.parseImportedBuildMethods(text);
+      if (!parsed.ok) {
+        plg.setBuildMethodsXferStatus(parsed.error);
+        return parsed;
+      }
+
+      var result = plg.applyImportedBuildMethods(parsed.methods, !!overwrite);
+      if (result.added > 0 || result.updated > 0) {
+        plg.refreshBuildMethodSelect();
+      }
+      plg.setBuildMethodsXferStatus(
+        plg.formatBuildMethodsImportStatus(result),
+      );
+      return result;
+    },
+
     checkBuildCode: function (mcode) {
-      var checkarray = mcode.split("-");
+      if (mcode == null || mcode === "") return false;
+      var checkarray = String(mcode).split("-");
       if (debug)
         console.log(
           "In check build, mcode = " + mcode + "  checkarray = " + checkarray,
