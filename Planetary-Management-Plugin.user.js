@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.16.1
+// @version       2026.8.16.2
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,9 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.16.2  Planet Predictor on starbase worlds forecasts
+//                             when predicted resources can afford each
+//                             currently legal ship at current starbase tech
 // @history       2026.8.16.1  Export and import planetary construction methods
 //                             as JSON from the Build Methods screen
 // @history       2026.8.16    Planetary Construction Method Wizard uses select elements
@@ -78,7 +81,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.16.1";
+  var plugin_version = "2026.8.16.2";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -207,6 +210,22 @@ text-size: 16px;}",
       vgap.plugins["plManagerPlugin"].addCss(
         "#PredHdr { \
 text-size: 14px;}",
+      );
+
+      vgap.plugins["plManagerPlugin"].addCss(
+        "#ShipForecastTable { \
+margin-top: 8px; \
+padding: 5px; \
+background-color: rgba(0,0,0,0.2);} \
+#ShipForecastTable th, #ShipForecastTable td { \
+padding: 2px 8px; \
+text-align: left; \
+vertical-align: top;} \
+#ShipForecastTable th.ShipCost, #ShipForecastTable td.ShipCost { \
+text-align: right;} \
+.ShipUnlockRow { \
+color: rgba(255,255,255,0.85); \
+font-size: 12px;}",
       );
 
       vgap.plugins["plManagerPlugin"].addCss(
@@ -2360,6 +2379,7 @@ background: #1a1a1a;}",
     pplanet: "",
     predictarray: [],
     predicttimes: {},
+    shipforecast: [],
     readOrder: 1,
     pmviewcode: 0,
     parray: [],
@@ -16470,6 +16490,11 @@ background: #1a1a1a;}",
 
           // Call the planet predictor
           plg.planetPredictor(planet, 0, 49);
+          plg.shipforecast = [];
+          var detailStarbase = vgap.getStarbase(planet.id);
+          if (detailStarbase != null) {
+            plg.shipforecast = plg.shipForecast(detailStarbase);
+          }
 
           // Construct the predictor table
 
@@ -16556,7 +16581,14 @@ background: #1a1a1a;}",
               plg.predicttimes.ttMMO +
               "</span> turns.</li>";
 
-          predhdrhtml += "</ul></p><br /></div>";
+          predhdrhtml += "</ul></p><br />";
+          if (detailStarbase != null) {
+            predhdrhtml += plg.shipForecastHeaderHtml(
+              detailStarbase,
+              plg.shipforecast,
+            );
+          }
+          predhdrhtml += "</div>";
 
           // Set up the planet information table
           var predhtml = "<table id = 'predtable'>";
@@ -16963,6 +16995,20 @@ background: #1a1a1a;}",
 <td>" +
               pdppreshtml +
               "</td></tr>";
+
+            if (plg.shipforecast && plg.shipforecast.length > 0) {
+              var newShips = [];
+              for (var s = 0; s < plg.shipforecast.length; s++) {
+                if (plg.shipforecast[s].turns === i)
+                  newShips.push(plg.shipforecast[s].name);
+              }
+              if (newShips.length > 0) {
+                predhtml +=
+                  "<tr class='ShipUnlockRow'><td colspan='7'>Ships newly affordable: <span class='PredictVal'>" +
+                  newShips.join(", ") +
+                  "</span></td></tr>";
+              }
+            }
           }
 
           predhtml += "</table>";
@@ -16980,39 +17026,47 @@ background: #1a1a1a;}",
             pophtml +
             "<td></td>";
           html += "</tr>";
-          var shipOptions =
-            "<option value=''>-- Select Hull --</option>" +
-            Object.keys(plg.shipByName)
-              .sort()
-              .map(function (name) {
-                return "<option value='" + name + "'>" + name + "</option>";
-              })
-              .join("");
-          var shipBuilderHtml =
-            "<select id='shipSelection'>" +
-            shipOptions +
-            "</select>" +
-            "<div id='shipLoadout' style='display:none;margin-top:8px;'>" +
-            "<table>" +
-            "<tr><td style='padding-right:6px;'>Engine:</td>" +
-            "<td><select id='engineSelection'><option value=''>-- Select Engine --</option></select></td></tr>" +
-            "<tr id='beamRow'><td style='padding-right:6px;'>Beams:</td>" +
-            "<td><select id='beamSelection'><option value=''>-- Select Beam --</option></select></td></tr>" +
-            "<tr id='torpRow'><td style='padding-right:6px;'>Torps:</td>" +
-            "<td><select id='torpSelection'><option value=''>-- Select Torp --</option></select></td></tr>" +
-            "</table>" +
-            "</div>" +
-            "<div id='shipBuildCost' style='display:none;margin-top:8px;'>" +
-            "<div style='color:#aaa;font-size:11px;margin-bottom:2px;'>Build Cost:</div>" +
-            "<table>" +
-            "<tr>" +
-            "<td>MC:</td><td id='sbcMC' class='PredictVal' style='padding-right:10px;'></td>" +
-            "<td>Dur:</td><td id='sbcDur' class='PredictVal' style='padding-right:10px;'></td>" +
-            "<td>Tri:</td><td id='sbcTri' class='PredictVal' style='padding-right:10px;'></td>" +
-            "<td>Mol:</td><td id='sbcMol' class='PredictVal'></td>" +
-            "</tr>" +
-            "</table>" +
-            "</div>";
+          var shipBuilderHtml = "";
+          if (detailStarbase != null) {
+            var playerHulls = plg.playerHulls().slice().sort(function (a, b) {
+              return a.name.localeCompare(b.name);
+            });
+            var shipOptions = "<option value=''>-- Select Hull --</option>";
+            for (var h = 0; h < playerHulls.length; h++) {
+              shipOptions +=
+                "<option value='" +
+                playerHulls[h].name +
+                "'>" +
+                playerHulls[h].name +
+                "</option>";
+            }
+            shipBuilderHtml =
+              "<select id='shipSelection'>" +
+              shipOptions +
+              "</select>" +
+              "<div id='shipLoadout' style='display:none;margin-top:8px;'>" +
+              "<table>" +
+              "<tr><td style='padding-right:6px;'>Engine:</td>" +
+              "<td><select id='engineSelection'><option value=''>-- Select Engine --</option></select></td></tr>" +
+              "<tr id='beamRow'><td style='padding-right:6px;'>Beams:</td>" +
+              "<td><select id='beamSelection'><option value=''>-- Select Beam --</option></select></td></tr>" +
+              "<tr id='torpRow'><td style='padding-right:6px;'>Torps:</td>" +
+              "<td><select id='torpSelection'><option value=''>-- Select Torp --</option></select></td></tr>" +
+              "</table>" +
+              "</div>" +
+              "<div id='shipBuildCost' style='display:none;margin-top:8px;'>" +
+              "<div style='color:#aaa;font-size:11px;margin-bottom:2px;'>Build Cost:</div>" +
+              "<table>" +
+              "<tr>" +
+              "<td>MC:</td><td id='sbcMC' class='PredictVal' style='padding-right:10px;'></td>" +
+              "<td>Dur:</td><td id='sbcDur' class='PredictVal' style='padding-right:10px;'></td>" +
+              "<td>Tri:</td><td id='sbcTri' class='PredictVal' style='padding-right:10px;'></td>" +
+              "<td>Mol:</td><td id='sbcMol' class='PredictVal'></td>" +
+              "</tr>" +
+              "</table>" +
+              "<div id='shipBuildEta' style='margin-top:4px;'></div>" +
+              "</div>";
+          }
           html +=
             "<tr><td width=300>" +
             bldghtml +
@@ -17031,80 +17085,78 @@ background: #1a1a1a;}",
         });
 
         // Ship builder — recalculate total build cost from hull + loadout selections
+        var hideShipBuildCost = function () {
+          $("#shipBuildCost").hide();
+          $("#shipBuildEta").empty();
+        };
+
         var updateShipBuildCost = function () {
           var hullName = $("#shipSelection").val();
-          var hull = plg.shipByName[hullName];
+          var hull = plg.hullForPlayer(hullName);
           if (!hull) {
-            $("#shipBuildCost").hide();
+            hideShipBuildCost();
             return;
           }
 
           var engVal = $("#engineSelection").val();
           if (!engVal) {
-            $("#shipBuildCost").hide();
+            hideShipBuildCost();
             return;
           }
 
           var beamVal = hull.beams > 0 ? $("#beamSelection").val() : "0";
           if (hull.beams > 0 && !beamVal) {
-            $("#shipBuildCost").hide();
+            hideShipBuildCost();
             return;
           }
 
           var torpVal = hull.torp > 0 ? $("#torpSelection").val() : "0";
           if (hull.torp > 0 && !torpVal) {
-            $("#shipBuildCost").hide();
+            hideShipBuildCost();
             return;
           }
 
-          var engine = plg.engineData[parseInt(engVal)];
+          var engine = plg.engineData[parseInt(engVal, 10)];
           var beam =
             hull.beams > 0
-              ? plg.beamData[parseInt(beamVal)]
+              ? plg.beamData[parseInt(beamVal, 10)]
               : { mc: 0, dur: 0, tri: 0, moly: 0 };
           var torp =
             hull.torp > 0
-              ? plg.torpData[parseInt(torpVal)]
+              ? plg.torpData[parseInt(torpVal, 10)]
               : { mc: 0, dur: 0, tri: 0, moly: 0 };
           if (!engine || !beam || !torp) {
-            $("#shipBuildCost").hide();
+            hideShipBuildCost();
             return;
           }
 
-          var mc =
-            hull.mc +
-            hull.eng * engine.mc +
-            hull.beams * beam.mc +
-            hull.torp * torp.mc;
-          var dur =
-            hull.dur +
-            hull.eng * engine.dur +
-            hull.beams * beam.dur +
-            hull.torp * torp.dur;
-          var tri =
-            hull.tri +
-            hull.eng * engine.tri +
-            hull.beams * beam.tri +
-            hull.torp * torp.tri;
-          var mol =
-            hull.mol +
-            hull.eng * engine.moly +
-            hull.beams * beam.moly +
-            hull.torp * torp.moly;
+          var cost = plg.shipBuildCost(hull, engine, beam, torp);
 
-          $("#sbcMC").text(mc);
-          $("#sbcDur").text(dur);
-          $("#sbcTri").text(tri);
-          $("#sbcMol").text(mol);
+          $("#sbcMC").text(cost.mc);
+          $("#sbcDur").text(cost.dur);
+          $("#sbcTri").text(cost.tri);
+          $("#sbcMol").text(cost.mol);
+
+          var turns = plg.turnsUntilCost(cost);
+          var eta;
+          if (turns === 0) eta = "Ready now";
+          else if (turns > 0)
+            eta =
+              "Ready in " + turns + " turn" + (turns === 1 ? "" : "s");
+          else eta = "Not within 50 turns";
+          $("#shipBuildEta").html(
+            "<span class='PredictVal'>" + eta + "</span>",
+          );
           $("#shipBuildCost").show();
         };
 
         // Populate loadout selects when a hull is chosen
         $("#shipSelection").change(function () {
           var hullName = $(this).val();
-          var hull = plg.shipByName[hullName];
+          var hull = plg.hullForPlayer(hullName);
           if (!hull) {
             $("#shipLoadout, #shipBuildCost").hide();
+            $("#shipBuildEta").empty();
             return;
           }
 
@@ -17172,6 +17224,7 @@ background: #1a1a1a;}",
 
           $("#shipLoadout").show();
           $("#shipBuildCost").hide();
+          $("#shipBuildEta").empty();
         });
 
         $("#engineSelection, #beamSelection, #torpSelection").change(
@@ -17226,7 +17279,10 @@ populations are maxed out, and mineral mining predictions based on your build an
 strategies are applied every turn and the planet is otherwise untouched, for the next 50 turns.  You can use the predictor, then, to compare your construction \
 strategies and tax strategies to one another; simply go back to the planetary management list view, change the methods you like, and go back to the detail view to see \
 how your forecast has changed.  Some strategies will maximize native growth, some colonist growth, and still others raw output of supplies and megacredits.  By \
-selecting different methods and looking at the Planet Predictor, you can see how your selected methods stack up against one another and your goals for this planet.</p><br/>";
+selecting different methods and looking at the Planet Predictor, you can see how your selected methods stack up against one another and your goals for this planet.</p> \
+<p>If the planet already has a starbase, the predictor also lists which of your race's currently legal hulls become affordable over those 50 turns.  Each hull is costed \
+as a complete ship using the best engines, beams, and torpedoes this starbase can currently install.  The forecast does not spend those resources on an actual build, \
+and does not assume tech upgrades.  You can also pick a specific hull and loadout on the planet detail view to see when that configuration would be ready.</p><br/>";
 
         html +=
           "<p><h2>Planetary Construction Method Manager</h2></p> \
@@ -19152,6 +19208,257 @@ Parameters: <br />\
         plg.predicttimes.ttTMO = turn;
       if (plg.predicttimes.ttMMO == -1 && plg.pplanet.groundmolybdenum == 0)
         plg.predicttimes.ttMMO = turn;
+    },
+
+    isDummyPart: function (part) {
+      if (!part) return true;
+      if (part.id === 0) return true;
+      if (part.name === "0" || part.name === "-no-") return true;
+      return false;
+    },
+
+    playerHulls: function () {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var raceid = vgap.player && vgap.player.raceid;
+      var hulls = [];
+      var seen = {};
+      for (var i = 0; i < plg.shipData.length; i++) {
+        if (plg.shipData[i].race == raceid) {
+          hulls.push(plg.shipData[i]);
+          seen[plg.shipData[i].name] = true;
+        }
+      }
+      for (var j = 0; j < plg.shipData.length; j++) {
+        if (plg.shipData[j].race == 0 && !seen[plg.shipData[j].name]) {
+          hulls.push(plg.shipData[j]);
+          seen[plg.shipData[j].name] = true;
+        }
+      }
+      return hulls;
+    },
+
+    hullForPlayer: function (name) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var hulls = plg.playerHulls();
+      for (var i = 0; i < hulls.length; i++) {
+        if (hulls[i].name === name) return hulls[i];
+      }
+      return null;
+    },
+
+    bestPartAtTech: function (table, techLevel) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var best = null;
+      techLevel = Number(techLevel);
+      if (!table || isNaN(techLevel)) return null;
+      for (var i = 0; i < table.length; i++) {
+        var part = table[i];
+        if (plg.isDummyPart(part)) continue;
+        if (part.tech > techLevel) continue;
+        if (!best) {
+          best = part;
+          continue;
+        }
+        if (part.tech > best.tech) {
+          best = part;
+          continue;
+        }
+        if (part.tech === best.tech) {
+          var partScore =
+            part.warpFactor != null ? part.warpFactor : part.autoscore || 0;
+          var bestScore =
+            best.warpFactor != null ? best.warpFactor : best.autoscore || 0;
+          if (partScore > bestScore) best = part;
+        }
+      }
+      return best;
+    },
+
+    defaultLoadout: function (hull, starbase) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      return {
+        engine: plg.bestPartAtTech(
+          plg.engineData,
+          starbase.enginetechlevel,
+        ),
+        beam:
+          hull.beams > 0
+            ? plg.bestPartAtTech(plg.beamData, starbase.beamtechlevel)
+            : null,
+        torp:
+          hull.torp > 0
+            ? plg.bestPartAtTech(plg.torpData, starbase.torptechlevel)
+            : null,
+      };
+    },
+
+    shipLoadoutText: function (hull, loadout) {
+      var parts = [];
+      if (loadout.engine)
+        parts.push(loadout.engine.name + " \u00d7" + hull.eng);
+      if (loadout.beam && hull.beams > 0)
+        parts.push(loadout.beam.name + " \u00d7" + hull.beams);
+      if (loadout.torp && hull.torp > 0)
+        parts.push(loadout.torp.name + " \u00d7" + hull.torp);
+      return parts.join(", ");
+    },
+
+    shipBuildCost: function (hull, engine, beam, torp) {
+      var zero = { mc: 0, dur: 0, tri: 0, moly: 0 };
+      engine = engine || zero;
+      beam = beam || zero;
+      torp = torp || zero;
+      var beamCount = hull.beams > 0 ? hull.beams : 0;
+      var torpCount = hull.torp > 0 ? hull.torp : 0;
+      return {
+        mc:
+          hull.mc +
+          hull.eng * engine.mc +
+          beamCount * beam.mc +
+          torpCount * torp.mc,
+        dur:
+          hull.dur +
+          hull.eng * engine.dur +
+          beamCount * beam.dur +
+          torpCount * torp.dur,
+        tri:
+          hull.tri +
+          hull.eng * engine.tri +
+          beamCount * beam.tri +
+          torpCount * torp.tri,
+        mol:
+          hull.mol +
+          hull.eng * engine.moly +
+          beamCount * beam.moly +
+          torpCount * torp.moly,
+      };
+    },
+
+    snapshotCanAfford: function (snapshot, cost) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      return (
+        plg.spendableCredits(snapshot) >= cost.mc &&
+        snapshot.duranium >= cost.dur &&
+        snapshot.tritanium >= cost.tri &&
+        snapshot.molybdenum >= cost.mol
+      );
+    },
+
+    turnsUntilCost: function (cost) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      if (!plg.predictarray) return -1;
+      for (var i = 0; i < plg.predictarray.length; i++) {
+        if (plg.snapshotCanAfford(plg.predictarray[i], cost)) return i;
+      }
+      return -1;
+    },
+
+    shipForecast: function (starbase) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var hulls = plg.playerHulls();
+      var result = [];
+      for (var i = 0; i < hulls.length; i++) {
+        var hull = hulls[i];
+        if (hull.tech > starbase.hulltechlevel) continue;
+        var loadout = plg.defaultLoadout(hull, starbase);
+        if (!loadout.engine) continue;
+        if (hull.beams > 0 && !loadout.beam) continue;
+        if (hull.torp > 0 && !loadout.torp) continue;
+        var cost = plg.shipBuildCost(
+          hull,
+          loadout.engine,
+          loadout.beam,
+          loadout.torp,
+        );
+        result.push({
+          hull: hull,
+          name: hull.name,
+          tech: hull.tech,
+          loadout: loadout,
+          loadoutText: plg.shipLoadoutText(hull, loadout),
+          cost: cost,
+          turns: plg.turnsUntilCost(cost),
+        });
+      }
+      result.sort(function (a, b) {
+        var aLate = a.turns === -1 ? 1 : 0;
+        var bLate = b.turns === -1 ? 1 : 0;
+        if (aLate !== bLate) return aLate - bLate;
+        if (a.turns !== b.turns) return a.turns - b.turns;
+        if (a.tech !== b.tech) return a.tech - b.tech;
+        return a.name.localeCompare(b.name);
+      });
+      return result;
+    },
+
+    shipForecastHeaderHtml: function (starbase, forecast) {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var html = "<div id='ShipForecast'><p><b>Ship Build Forecast</b></p>";
+      html +=
+        "<p>Using this starbase's current tech (H/E/B/T: " +
+        starbase.hulltechlevel +
+        "/" +
+        starbase.enginetechlevel +
+        "/" +
+        starbase.beamtechlevel +
+        "/" +
+        starbase.torptechlevel +
+        ") and a full loadout at that tech. Resources are not deducted for actually building.";
+      if (!plg.noSupplies()) {
+        html += " Megacredit cost treats supplies as convertible.";
+      }
+      html += "</p>";
+      if (!forecast || forecast.length === 0) {
+        html +=
+          "<p>No hulls are available at this starbase's current hull technology.</p></div>";
+        return html;
+      }
+      html +=
+        "<table id='ShipForecastTable'><thead><tr>" +
+        "<th>Hull</th><th>Tech</th><th>Loadout</th><th>Turns</th>" +
+        "<th class='ShipCost'>MC</th><th class='ShipCost'>Dur</th>" +
+        "<th class='ShipCost'>Tri</th><th class='ShipCost'>Mol</th>" +
+        "</tr></thead><tbody>";
+      for (var i = 0; i < forecast.length; i++) {
+        var row = forecast[i];
+        var turnsTxt;
+        var turnsClass = "";
+        if (row.turns === 0) {
+          turnsTxt = "Now";
+          turnsClass = "PredictVal";
+        } else if (row.turns > 0) {
+          turnsTxt = String(row.turns);
+          turnsClass = "PredictVal";
+        } else {
+          turnsTxt = "\u2014";
+        }
+        html +=
+          "<tr><td>" +
+          row.name +
+          "</td><td>" +
+          row.tech +
+          "</td><td>" +
+          row.loadoutText +
+          "</td><td" +
+          (turnsClass ? " class='" + turnsClass + "'" : "") +
+          ">" +
+          turnsTxt +
+          "</td>" +
+          "<td class='ShipCost'>" +
+          row.cost.mc +
+          "</td>" +
+          "<td class='ShipCost'>" +
+          row.cost.dur +
+          "</td>" +
+          "<td class='ShipCost'>" +
+          row.cost.tri +
+          "</td>" +
+          "<td class='ShipCost'>" +
+          row.cost.mol +
+          "</td></tr>";
+      }
+      html += "</tbody></table></div>";
+      return html;
     },
 
     showSBTurnCount: function (el) {
