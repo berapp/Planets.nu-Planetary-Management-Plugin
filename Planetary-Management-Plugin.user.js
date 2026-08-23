@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.16.2
+// @version       2026.8.16.3
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,9 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.8.16.3  Ship forecast lists only hulls this player
+//                             can build in the current game (researched
+//                             and allowed by game configuration)
 // @history       2026.8.16.2  Planet Predictor on starbase worlds forecasts
 //                             when predicted resources can afford each
 //                             currently legal ship at current starbase tech
@@ -81,7 +84,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.16.2";
+  var plugin_version = "2026.8.16.3";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -17280,9 +17283,10 @@ strategies are applied every turn and the planet is otherwise untouched, for the
 strategies and tax strategies to one another; simply go back to the planetary management list view, change the methods you like, and go back to the detail view to see \
 how your forecast has changed.  Some strategies will maximize native growth, some colonist growth, and still others raw output of supplies and megacredits.  By \
 selecting different methods and looking at the Planet Predictor, you can see how your selected methods stack up against one another and your goals for this planet.</p> \
-<p>If the planet already has a starbase, the predictor also lists which of your race's currently legal hulls become affordable over those 50 turns.  Each hull is costed \
-as a complete ship using the best engines, beams, and torpedoes this starbase can currently install.  The forecast does not spend those resources on an actual build, \
-and does not assume tech upgrades.  You can also pick a specific hull and loadout on the planet detail view to see when that configuration would be ready.</p><br/>";
+<p>If the planet already has a starbase, the predictor also lists which hulls you can actually build in this game: hulls that are allowed by the game configuration, \
+researched and enabled for your player, and within this starbase's current hull tech.  Each hull is costed as a complete ship using the best engines, beams, and \
+torpedoes this starbase can currently install.  The forecast does not spend those resources on an actual build, and does not assume tech upgrades.  You can also pick \
+a specific hull and loadout on the planet detail view to see when that configuration would be ready.</p><br/>";
 
         html +=
           "<p><h2>Planetary Construction Method Manager</h2></p> \
@@ -19217,7 +19221,131 @@ Parameters: <br />\
       return false;
     },
 
-    playerHulls: function () {
+    parseHullIdList: function (value) {
+      var ids = [];
+      var seen = {};
+      var add = function (id) {
+        id = parseInt(id, 10);
+        if (!id || seen[id]) return;
+        seen[id] = true;
+        ids.push(id);
+      };
+      if (value == null || value === "") return ids;
+      if (typeof value === "string") {
+        var parts = value.split(/[\s,;|]+/);
+        for (var i = 0; i < parts.length; i++) {
+          if (parts[i]) add(parts[i]);
+        }
+        return ids;
+      }
+      if (Object.prototype.toString.call(value) === "[object Array]") {
+        for (var j = 0; j < value.length; j++) {
+          var item = value[j];
+          if (item && typeof item === "object")
+            add(item.id != null ? item.id : item.hullid);
+          else add(item);
+        }
+        return ids;
+      }
+      if (typeof value === "object") {
+        for (var key in value) {
+          if (!Object.prototype.hasOwnProperty.call(value, key)) continue;
+          var val = value[key];
+          if (val === true || val === 1 || val === "1") add(key);
+          else if (typeof val === "number") add(val);
+          else if (val && typeof val === "object")
+            add(val.id != null ? val.id : val.hullid != null ? val.hullid : key);
+          else if (val && !isNaN(parseInt(key, 10))) add(key);
+        }
+      }
+      return ids;
+    },
+
+    intersectIds: function (a, b) {
+      var seen = {};
+      var out = [];
+      for (var i = 0; i < b.length; i++) seen[b[i]] = true;
+      for (var j = 0; j < a.length; j++) {
+        if (seen[a[j]]) out.push(a[j]);
+      }
+      return out;
+    },
+
+    allowedHullIds: function () {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var player = vgap.player || {};
+      var race = null;
+      try {
+        if (typeof vgap.getRace === "function")
+          race = vgap.getRace(player.raceid);
+      } catch (e) {
+        race = null;
+      }
+
+      var active = plg.parseHullIdList(
+        player.activehulls != null ? player.activehulls : vgap.activehulls,
+      );
+      var raceSource =
+        vgap.racehulls != null
+          ? vgap.racehulls
+          : race
+            ? race.hulls != null
+              ? race.hulls
+              : race.basehulls
+            : null;
+      var raceids = plg.parseHullIdList(raceSource);
+
+      if (active.length && raceids.length)
+        return plg.intersectIds(active, raceids);
+      if (active.length) return active;
+      if (raceids.length) return raceids;
+      return [];
+    },
+
+    vgapHullToPlugin: function (hull) {
+      if (!hull) return null;
+      var mc = hull.cost != null ? hull.cost : hull.mc;
+      var dur = hull.duranium != null ? hull.duranium : hull.dur;
+      var tri = hull.tritanium != null ? hull.tritanium : hull.tri;
+      var mol = hull.molybdenum != null ? hull.molybdenum : hull.mol;
+      var eng = hull.engines != null ? hull.engines : hull.eng;
+      if (mc == null || dur == null || tri == null || mol == null) return null;
+      return {
+        id: hull.id,
+        name: hull.name,
+        tech: hull.techlevel != null ? hull.techlevel : hull.tech,
+        mc: mc,
+        dur: dur,
+        tri: tri,
+        mol: mol,
+        eng: eng != null ? eng : 0,
+        beams: hull.beams || 0,
+        torp:
+          hull.launchers != null
+            ? hull.launchers
+            : hull.torp != null
+              ? hull.torp
+              : 0,
+        bays: hull.fighterbays != null ? hull.fighterbays : hull.bays,
+      };
+    },
+
+    playerHullsFromGame: function () {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var ids = plg.allowedHullIds();
+      if (!ids.length || typeof vgap.getHull !== "function") return [];
+      var hulls = [];
+      var seen = {};
+      for (var i = 0; i < ids.length; i++) {
+        var hull = plg.vgapHullToPlugin(vgap.getHull(ids[i]));
+        if (!hull || !hull.name || seen[hull.name]) continue;
+        seen[hull.name] = true;
+        hulls.push(hull);
+      }
+      return hulls;
+    },
+
+    playerHullsFromShipData: function () {
       var plg = vgap.plugins["plManagerPlugin"];
       var raceid = vgap.player && vgap.player.raceid;
       var hulls = [];
@@ -19235,6 +19363,13 @@ Parameters: <br />\
         }
       }
       return hulls;
+    },
+
+    playerHulls: function () {
+      var plg = vgap.plugins["plManagerPlugin"];
+      var fromGame = plg.playerHullsFromGame();
+      if (fromGame.length) return fromGame;
+      return plg.playerHullsFromShipData();
     },
 
     hullForPlayer: function (name) {
@@ -19277,10 +19412,10 @@ Parameters: <br />\
     defaultLoadout: function (hull, starbase) {
       var plg = vgap.plugins["plManagerPlugin"];
       return {
-        engine: plg.bestPartAtTech(
-          plg.engineData,
-          starbase.enginetechlevel,
-        ),
+        engine:
+          hull.eng > 0
+            ? plg.bestPartAtTech(plg.engineData, starbase.enginetechlevel)
+            : null,
         beam:
           hull.beams > 0
             ? plg.bestPartAtTech(plg.beamData, starbase.beamtechlevel)
@@ -19361,7 +19496,7 @@ Parameters: <br />\
         var hull = hulls[i];
         if (hull.tech > starbase.hulltechlevel) continue;
         var loadout = plg.defaultLoadout(hull, starbase);
-        if (!loadout.engine) continue;
+        if (hull.eng > 0 && !loadout.engine) continue;
         if (hull.beams > 0 && !loadout.beam) continue;
         if (hull.torp > 0 && !loadout.torp) continue;
         var cost = plg.shipBuildCost(
@@ -19410,7 +19545,7 @@ Parameters: <br />\
       html += "</p>";
       if (!forecast || forecast.length === 0) {
         html +=
-          "<p>No hulls are available at this starbase's current hull technology.</p></div>";
+          "<p>No hulls are available to build in this game at this starbase's current hull technology.</p></div>";
         return html;
       }
       html +=
