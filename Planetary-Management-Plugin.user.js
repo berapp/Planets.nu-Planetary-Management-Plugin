@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          Planets.nu - Planetary Management Plugin
 // @description   Planetary Management Plugin
-// @version       2026.8.16.3
+// @version       2026.11.17.1
 // @copyright	  2014, Dotman, Forked
 // @license		  CC BY-NC-ND 4.0 (https://creativecommons.org/licenses/by-nc-nd/4.0/)
 // @author        Dotma
@@ -41,6 +41,8 @@
 //                Added more planetary filters to identify planets that need to be grown
 //                Added bulk set all planetary friendly codes
 //                Added a button that does nothing now but I will enhance it to tag planets that are selected
+// @history       2026.11.17.1  Native race images load from mobile.planets.nu
+//                             so newer races (e.g. Ranine) display
 // @history       2026.8.16.3  Ship forecast lists only hulls this player
 //                             can build in the current game (researched
 //                             and allowed by game configuration)
@@ -84,7 +86,7 @@ function wrapper() {
     return;
   }
 
-  var plugin_version = "2026.8.16.3";
+  var plugin_version = "2026.11.17.1";
   var debug = true;
 
   console.log("Map Beta: Planetary Manager plugin version: v" + plugin_version);
@@ -15278,7 +15280,7 @@ background: #1a1a1a;}",
                   plg.nwc(planet.nativeclans * 100) +
                   "</td></tr>";
               pophtml +=
-                "<tr><td align='center' rowspan = 2><img width='35' height='35' src='https://planets.nu/img/natives/" +
+                "<tr><td align='center' rowspan = 2><img width='35' height='35' src='https://mobile.planets.nu/img/natives/" +
                 planet.nativetype +
                 ".gif'/></td>";
               pophtml +=
@@ -15941,7 +15943,7 @@ background: #1a1a1a;}",
 
           if (planet.nativeclans > 0) {
             pophtml +=
-              "<tr><td rowspan = 5><img width='150' height='150' src='https://planets.nu/img/natives/" +
+              "<tr><td rowspan = 5><img width='150' height='150' src='https://mobile.planets.nu/img/natives/" +
               planet.nativetype +
               ".gif'/></td>";
             pophtml +=
@@ -16710,7 +16712,7 @@ background: #1a1a1a;}",
                   "</td></tr>";
 
               pdpppophtml +=
-                "<tr><td align='center' rowspan = 2><img width='35' height='35' src='https://planets.nu/img/natives/" +
+                "<tr><td align='center' rowspan = 2><img width='35' height='35' src='https://mobile.planets.nu/img/natives/" +
                 planet.nativetype +
                 ".gif'/></td>";
               pdpppophtml +=
